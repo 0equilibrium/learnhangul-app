@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 
 /// Button variant for different visual styles
 enum ButtonVariant {
@@ -52,7 +53,27 @@ class LiquidGlassButtons {
       borderRadius: buttonSize / 2,
     );
 
-    return CupertinoButton(
+    // Compute a glassColor similar to the text button so visual effect matches
+    final theme = Theme.of(context);
+    final isLight = theme.brightness == Brightness.light;
+    final primary = theme.colorScheme.primary;
+    Color glassColor;
+    switch (effectiveVariant) {
+      case ButtonVariant.confirmation:
+        glassColor = primary.withOpacity(0.12);
+        break;
+      case ButtonVariant.destructive:
+        glassColor = isBackgroundBright
+            ? theme.colorScheme.surface.withOpacity(0.7)
+            : (isLight ? const Color(0x33FFFFFF) : const Color(0x1AFFFFFF));
+        break;
+      case ButtonVariant.standard:
+        glassColor = isBackgroundBright
+            ? theme.colorScheme.surface.withOpacity(0.7)
+            : (isLight ? const Color(0x33FFFFFF) : const Color(0x1AFFFFFF));
+    }
+
+    final content = CupertinoButton(
       padding: EdgeInsets.zero,
       onPressed: onPressed ?? () => Navigator.pop(context),
       child: Container(
@@ -66,6 +87,18 @@ class LiquidGlassButtons {
             color: _getIconColor(context, effectiveVariant),
           ),
         ),
+      ),
+    );
+
+    return LiquidGlassLayer(
+      settings: LiquidGlassSettings(
+        thickness: 5,
+        glassColor: glassColor,
+        lightIntensity: 1.5,
+      ),
+      child: LiquidGlass(
+        shape: LiquidRoundedRectangle(borderRadius: buttonSize / 2),
+        child: content,
       ),
     );
   }
@@ -110,8 +143,6 @@ class LiquidGlassButtons {
     bool isBackgroundBright = false,
     bool isEnabled = true,
     bool largeText = false,
-    @Deprecated('Use variant parameter') bool? isConfirmationBlue,
-    @Deprecated('Use variant parameter') bool? isRed,
   }) {
     return circularTextButton(
       context,
@@ -122,8 +153,6 @@ class LiquidGlassButtons {
       maxWidth: 124.0,
       isEnabled: isEnabled,
       largeText: largeText,
-      isConfirmationBlue: isConfirmationBlue,
-      isRed: isRed,
     );
   }
 
@@ -241,7 +270,7 @@ class LiquidGlassButtons {
         final primary = theme.colorScheme.primary;
         return BoxDecoration(
           borderRadius: BorderRadius.circular(borderRadius),
-          color: primary.withOpacity(0.12),
+          color: primary.withValues(alpha: 0.12),
           border: Border.all(color: primary, width: _kBorderWidthAccent),
         );
       case ButtonVariant.destructive:
@@ -390,13 +419,18 @@ class LiquidGlassButtons {
   }) {
     final theme = Theme.of(context);
     final surface = theme.colorScheme.surface;
-    final outline = theme.colorScheme.onSurface.withOpacity(0.12);
+    final isLight = theme.brightness == Brightness.light;
+    final outline = isBackgroundBright
+        ? theme.colorScheme.onSurface.withOpacity(0.12)
+        : (isLight
+              ? Colors.white.withOpacity(0.4)
+              : Colors.white.withOpacity(0.03));
     return BoxDecoration(
       borderRadius: BorderRadius.circular(borderRadius),
       color: isBackgroundBright
           ? surface.withOpacity(0.7)
-          : surface.withOpacity(0.5),
-      border: Border.all(color: outline),
+          : (isLight ? const Color(0x33FFFFFF) : const Color(0x1AFFFFFF)),
+      border: Border.all(color: outline, width: 2.0),
     );
   }
 }

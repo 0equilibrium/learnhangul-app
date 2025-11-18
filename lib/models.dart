@@ -758,8 +758,8 @@ final Set<String> consonantBatchimWordSymbols = {
 
 const List<HangulSection> vowelSections = [
   HangulSection(
-    title: '기본 모음',
-    description: '가장 기본적인 6개의 모음입니다.',
+    title: '',
+    description: '',
     characters: [
       HangulCharacter(
         symbol: 'ㅏ',
@@ -806,8 +806,8 @@ const List<HangulSection> vowelSections = [
     ],
   ),
   HangulSection(
-    title: '이중 모음',
-    description: '두 개의 모음이 결합된 모음입니다.',
+    title: '',
+    description: '',
     characters: [
       HangulCharacter(
         symbol: 'ㅐ',
@@ -840,8 +840,8 @@ const List<HangulSection> vowelSections = [
     ],
   ),
   HangulSection(
-    title: '반모음',
-    description: 'ㅣ나 ㅡ 앞에 ㅇ 소리가 붙은 모음입니다.',
+    title: '',
+    description: '',
     characters: [
       HangulCharacter(
         symbol: 'ㅑ',
@@ -888,8 +888,8 @@ const List<HangulSection> vowelSections = [
     ],
   ),
   HangulSection(
-    title: '복합 모음',
-    description: '세 개 이상의 모음이 결합된 복합 모음입니다.',
+    title: '',
+    description: '',
     characters: [
       HangulCharacter(
         symbol: 'ㅘ',

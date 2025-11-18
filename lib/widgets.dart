@@ -4,6 +4,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 
 import 'design_system.dart';
 import 'models.dart';
+import 'utils.dart';
 
 Future<void> showCharacterDetails(
   BuildContext context,
@@ -48,7 +49,7 @@ class HangulTabContent extends StatelessWidget {
         const SizedBox(height: 24),
         for (final section in sections)
           Padding(
-            padding: const EdgeInsets.only(bottom: 4),
+            padding: const EdgeInsets.only(bottom: 12),
             child: HangulSectionCard(
               section: section,
               onCharacterTap: (character) =>
@@ -143,38 +144,172 @@ class HangulSectionCard extends StatelessWidget {
     required this.section,
     required this.onCharacterTap,
     this.correctCounts = const {},
+    this.isLocked = false,
+    this.isMastered = false,
+    this.unlockThreshold = kRowUnlockThreshold,
+    this.onLockedTap,
+    this.isDense = false,
+    this.showHeader = true,
   });
 
   final HangulSection section;
   final ValueChanged<HangulCharacter> onCharacterTap;
   final Map<String, int> correctCounts;
+  final bool isLocked;
+  final bool isMastered;
+  final int unlockThreshold;
+  final VoidCallback? onLockedTap;
+  final bool isDense;
+  final bool showHeader;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
+    final palette = LearnHangulTheme.paletteOf(context);
+    final typography = LearnHangulTheme.typographyOf(context);
+    final statusLabel = isMastered ? '완료' : '';
+    final statusColor = isMastered
+        ? palette.success
+        : (isLocked ? palette.secondaryText : palette.info);
+    // Use tile corner radius for overlay clipping (keep visual rhythm with tiles)
+
+    final double outerVerticalPadding = isDense ? 0.0 : 4.0;
+    final double headerToTilesSpacing = isDense ? 0.0 : 8.0;
+    final double overlayHorizontalPadding = isDense
+        ? 0.0
+        : _HangulSectionPadding.defaultHorizontal;
+    final double overlayVerticalPadding = isDense
+        ? 0.0
+        : _HangulSectionPadding.defaultVertical;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (showHeader)
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: 4,
+              vertical: outerVerticalPadding,
+            ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                for (final character in section.characters)
-                  Padding(
-                    // 줄 간격을 줄였습니다.
-                    padding: const EdgeInsets.only(right: 4),
-                    child: _HangulCharacterTile(
-                      character: character,
-                      onTap: onCharacterTap,
-                      correctCount: correctCounts[character.symbol] ?? 0,
-                    ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(section.title, style: typography.subtitle),
+                      if (section.description.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          section.description,
+                          style: typography.caption.copyWith(
+                            color: palette.secondaryText,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
+                ),
+                if (statusLabel.isNotEmpty) ...[
+                  const SizedBox(width: 12),
+                  _StatusPill(label: statusLabel, color: statusColor),
+                ],
               ],
             ),
           ),
-        ],
+        if (showHeader) SizedBox(height: headerToTilesSpacing),
+        Stack(
+          children: [
+            // Keep paddings in sync with the overlay's positioning below
+            _HangulSectionPadding(
+              horizontal: overlayHorizontalPadding,
+              vertical: overlayVerticalPadding,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  const spacing = 4.0;
+                  const runSpacing = 6.0;
+                  const minTileWidth = 64.0;
+                  final availableWidth = constraints.maxWidth;
+                  final count = availableWidth <= minTileWidth
+                      ? 1
+                      : (availableWidth + spacing) ~/ (minTileWidth + spacing);
+                  final numPerRow = count < 1 ? 1 : count;
+                  final tileWidth =
+                      (availableWidth - (numPerRow - 1) * spacing) / numPerRow;
+                  // Make tiles square by using equal height and width
+                  final tileHeight = tileWidth;
+                  return Wrap(
+                    spacing: spacing,
+                    runSpacing: runSpacing,
+                    alignment: WrapAlignment.start,
+                    children: [
+                      for (final character in section.characters)
+                        SizedBox(
+                          width: tileWidth,
+                          child: _HangulCharacterTile(
+                            character: character,
+                            onTap: onCharacterTap,
+                            correctCount: correctCounts[character.symbol] ?? 0,
+                            width: tileWidth,
+                            height: tileHeight,
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ),
+            if (isLocked)
+              // Position the locked overlay so it matches the section padding.
+              // This prevents the overlay from touching the screen edges and
+              // ensures it doesn't overflow the visible tile area.
+              Positioned(
+                left: overlayHorizontalPadding,
+                right: overlayHorizontalPadding,
+                top: overlayVerticalPadding,
+                bottom: overlayVerticalPadding,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(
+                    _HangulCharacterTile.cornerRadius,
+                  ),
+                  child: Material(
+                    color: palette.elevatedSurface.withOpacity(0.92),
+                    child: InkWell(
+                      onTap: onLockedTap,
+                      child: const SizedBox.expand(),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final typography = LearnHangulTheme.typographyOf(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.4)),
+      ),
+      child: Text(
+        label,
+        style: typography.caption.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -185,11 +320,17 @@ class _HangulCharacterTile extends StatelessWidget {
     required this.character,
     required this.onTap,
     required this.correctCount,
+    this.width,
+    this.height,
   });
+
+  static const double cornerRadius = 8.0;
 
   final HangulCharacter character;
   final ValueChanged<HangulCharacter> onTap;
   final int correctCount;
+  final double? width;
+  final double? height;
 
   /// Calculate button background color based on correct count.
   /// 0 -> current surface color
@@ -219,60 +360,107 @@ class _HangulCharacterTile extends StatelessWidget {
     );
 
     // 한글 문자와 로마자 표기는 항상 기본 색상 유지
-    final textColor = palette.primaryText;
-    final captionColor = palette.mutedText;
+    final textColor = correctCount >= 7 ? Colors.white : palette.primaryText;
+    final captionColor = correctCount >= 7
+        ? Colors.white.withOpacity(0.8)
+        : palette.mutedText;
 
+    final double tileSize = width ?? height ?? 72.0;
+    final double contentFontSize = 18.0;
     return CupertinoButton(
       padding: EdgeInsets.zero,
       onPressed: () => onTap(character),
       child: Container(
-        // 모음 카드는 정사각형으로 고정된 크기를 사용합니다.
-        width: 64,
-        height: 72,
+        width: tileSize,
+        height: tileSize,
         decoration: BoxDecoration(
           color: backgroundColor,
-          // 곡률을 줄였습니다.
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(
+            _HangulCharacterTile.cornerRadius,
+          ),
           border: Border.all(color: palette.outline),
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // 우측 상단에 정답 횟수
             Align(
-              alignment: Alignment.topRight,
+              alignment: Alignment.centerRight,
               child: Padding(
-                padding: const EdgeInsets.only(right: 4, top: 2),
+                padding: const EdgeInsets.only(right: 4),
                 child: Text(
                   '$correctCount',
+                  key: Key('correct-${character.symbol}'),
                   style: typography.caption.copyWith(
                     color: captionColor,
                     fontWeight: FontWeight.w600,
+                    fontSize: 13.0,
                   ),
                 ),
               ),
             ),
-
-            // 한글 문자
-            Text(
-              character.symbol,
-              style: typography.heading.copyWith(
-                fontSize: 22,
-                color: textColor,
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          character.symbol,
+                          key: Key('symbol-${character.symbol}'),
+                          style: TextStyle(
+                            fontSize: contentFontSize * 1.3,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                          ),
+                        ),
+                        if (character.romanization.isNotEmpty)
+                          Text(
+                            character.romanization,
+                            textAlign: TextAlign.center,
+                            style: typography.caption.copyWith(
+                              color: captionColor,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            ),
-
-            // 로마자 (간격 줄임)
-            Text(
-              character.romanization,
-              textAlign: TextAlign.center,
-              style: typography.caption.copyWith(color: captionColor),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+// The tile corner radius is defined as a static field on the tile class so other
+// widgets can match it for visual consistency.
+
+/// Internal helper to keep the same padding values for section rows and their
+/// overlay so both the unlocked and locked states visually match.
+class _HangulSectionPadding extends StatelessWidget {
+  static const double defaultHorizontal = 6.0;
+  static const double defaultVertical = 8.0;
+
+  const _HangulSectionPadding({
+    Key? key,
+    required this.child,
+    this.horizontal = defaultHorizontal,
+    this.vertical = defaultVertical,
+  }) : super(key: key);
+
+  final Widget child;
+  final double horizontal;
+  final double vertical;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: horizontal, vertical: vertical),
+      child: child,
     );
   }
 }

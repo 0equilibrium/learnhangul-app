@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -10,6 +11,7 @@ import 'design_system.dart';
 import 'liquid_glass_buttons.dart';
 import 'models.dart';
 import 'widgets.dart';
+import 'utils.dart';
 
 const _learnedWordsPrefsKey = 'learned_words_v1';
 
@@ -89,7 +91,8 @@ class VowelLearningScreen extends StatefulWidget {
 }
 
 class _VowelLearningScreenState extends State<VowelLearningScreen> {
-  Map<String, int>? _correctCounts;
+  Map<String, int> _correctCounts = const {};
+  List<SectionUnlockStatus> _sectionStatuses = const [];
 
   @override
   void initState() {
@@ -102,12 +105,30 @@ class _VowelLearningScreenState extends State<VowelLearningScreen> {
     final allVowels = vowelSections
         .expand((section) => section.characters)
         .toList();
+    final counts = {
+      for (var v in allVowels)
+        v.symbol: prefs.getInt('correct_${v.symbol}') ?? 0,
+    };
+    final summary = evaluateSectionUnlocks(
+      sections: vowelSections,
+      correctCounts: counts,
+    );
+    if (!mounted) return;
     setState(() {
-      _correctCounts = {
-        for (var v in allVowels)
-          v.symbol: prefs.getInt('correct_${v.symbol}') ?? 0,
-      };
+      _correctCounts = counts;
+      _sectionStatuses = summary.statuses;
     });
+  }
+
+  void _showVowelLockedRowDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => LearnHangulDialog(
+        title: '새로운 행 해제',
+        message: '앞선 행의 모든 모음을 각각 $kRowUnlockThreshold회 이상 맞히면 다음 행이 열립니다.',
+        variant: LearnHangulDialogVariant.info,
+      ),
+    );
   }
 
   @override
@@ -118,19 +139,30 @@ class _VowelLearningScreenState extends State<VowelLearningScreen> {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              padding: EdgeInsets.zero,
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  for (final section in vowelSections)
+                  for (final entry in vowelSections.asMap().entries)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
+                      // Add vertical spacing between section rows for better readability.
+                      padding: const EdgeInsets.only(bottom: 12),
                       child: HangulSectionCard(
-                        section: section,
+                        section: entry.value,
                         onCharacterTap: (character) =>
                             showCharacterDetails(context, character),
-                        correctCounts: _correctCounts ?? {},
+                        correctCounts: _correctCounts,
+                        isLocked: entry.key < _sectionStatuses.length
+                            ? !_sectionStatuses[entry.key].isUnlocked
+                            : entry.key > 0,
+                        isMastered: entry.key < _sectionStatuses.length
+                            ? _sectionStatuses[entry.key].isMastered
+                            : false,
+                        unlockThreshold: kRowUnlockThreshold,
+                        onLockedTap: _showVowelLockedRowDialog,
+                        isDense: true,
+                        showHeader: false,
                       ),
                     ),
                 ],
@@ -138,7 +170,8 @@ class _VowelLearningScreenState extends State<VowelLearningScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.only(bottom: 24),
+            // Add horizontal margin so the button doesn't stretch edge-to-edge.
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
             child: LiquidGlassButton(
               label: '훈련하기',
               onPressed: () {
@@ -148,7 +181,7 @@ class _VowelLearningScreenState extends State<VowelLearningScreen> {
                     builder: (context) =>
                         TrainingScreen(sections: vowelSections),
                   ),
-                );
+                ).then((_) => _loadCounts());
               },
             ),
           ),
@@ -167,7 +200,8 @@ class ConsonantLearningScreen extends StatefulWidget {
 }
 
 class _ConsonantLearningScreenState extends State<ConsonantLearningScreen> {
-  Map<String, int>? _correctCounts;
+  Map<String, int> _correctCounts = const {};
+  List<SectionUnlockStatus> _sectionStatuses = const [];
 
   @override
   void initState() {
@@ -180,12 +214,30 @@ class _ConsonantLearningScreenState extends State<ConsonantLearningScreen> {
     final allConsonants = consonantSections
         .expand((section) => section.characters)
         .toList();
+    final counts = {
+      for (var c in allConsonants)
+        c.symbol: prefs.getInt('correct_${c.symbol}') ?? 0,
+    };
+    final summary = evaluateSectionUnlocks(
+      sections: consonantSections,
+      correctCounts: counts,
+    );
+    if (!mounted) return;
     setState(() {
-      _correctCounts = {
-        for (var c in allConsonants)
-          c.symbol: prefs.getInt('correct_${c.symbol}') ?? 0,
-      };
+      _correctCounts = counts;
+      _sectionStatuses = summary.statuses;
     });
+  }
+
+  void _showConsonantLockedRowDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => LearnHangulDialog(
+        title: '새로운 행 해제',
+        message: '앞선 자음 행의 모든 글자를 $kRowUnlockThreshold회 이상 맞히면 다음 행이 열립니다.',
+        variant: LearnHangulDialogVariant.info,
+      ),
+    );
   }
 
   @override
@@ -193,9 +245,9 @@ class _ConsonantLearningScreenState extends State<ConsonantLearningScreen> {
     return Scaffold(
       appBar: LearnHangulAppBar(
         '자음 학습',
-        trailing: IconButton(
-          icon: const Icon(Icons.menu_book_rounded),
-          tooltip: '내가 학습한 단어',
+        trailing: LiquidGlassButtons.circularIconButton(
+          context,
+          icon: Icons.menu_book_rounded,
           onPressed: () {
             Navigator.push(
               context,
@@ -210,19 +262,30 @@ class _ConsonantLearningScreenState extends State<ConsonantLearningScreen> {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              padding: EdgeInsets.zero,
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  for (final section in consonantSections)
+                  for (final entry in consonantSections.asMap().entries)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
+                      // Add vertical spacing between section rows for better readability.
+                      padding: const EdgeInsets.only(bottom: 12),
                       child: HangulSectionCard(
-                        section: section,
+                        section: entry.value,
                         onCharacterTap: (character) =>
                             showCharacterDetails(context, character),
-                        correctCounts: _correctCounts ?? {},
+                        correctCounts: _correctCounts,
+                        isLocked: entry.key < _sectionStatuses.length
+                            ? !_sectionStatuses[entry.key].isUnlocked
+                            : entry.key > 0,
+                        isMastered: entry.key < _sectionStatuses.length
+                            ? _sectionStatuses[entry.key].isMastered
+                            : false,
+                        unlockThreshold: kRowUnlockThreshold,
+                        onLockedTap: _showConsonantLockedRowDialog,
+                        isDense: true,
+                        showHeader: false,
                       ),
                     ),
                 ],
@@ -230,7 +293,8 @@ class _ConsonantLearningScreenState extends State<ConsonantLearningScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.only(bottom: 24),
+            // Add horizontal margin so the button doesn't stretch edge-to-edge.
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
             child: LiquidGlassButton(
               label: '훈련하기',
               onPressed: () {
@@ -240,7 +304,7 @@ class _ConsonantLearningScreenState extends State<ConsonantLearningScreen> {
                     builder: (context) =>
                         TrainingScreen(sections: consonantSections),
                   ),
-                );
+                ).then((_) => _loadCounts());
               },
             ),
           ),
@@ -587,10 +651,16 @@ class _TrainingScreenState extends State<TrainingScreen> {
   TrainingMode? _lastMode;
   String? _lastCharacterSymbol;
   final Random _rand = Random();
+  SectionUnlockSummary? _sectionSummary;
+  Set<ConsonantQuestionCategory> _allowedConsonantCategories = const {
+    ConsonantQuestionCategory.single,
+  };
+  final List<_RetryQuestion> _retryQueue = <_RetryQuestion>[];
+  static const int _sessionGoal = 10;
+  static const int _minRetryGap = 3;
+  int _questionsServed = 0;
 
-  bool get _isVowelTraining =>
-      identical(widget.sections, vowelSections) ||
-      (widget.sections.isNotEmpty && widget.sections.first.title == '기본 모음');
+  bool get _isVowelTraining => identical(widget.sections, vowelSections);
 
   bool get _isConsonantTraining =>
       identical(widget.sections, consonantSections) ||
@@ -633,7 +703,6 @@ class _TrainingScreenState extends State<TrainingScreen> {
 
   Future<void> _loadCounts() async {
     final prefs = await SharedPreferences.getInstance();
-    // Load counts for all characters
     final baseCharacters = widget.sections
         .expand((section) => section.characters)
         .toList();
@@ -646,25 +715,12 @@ class _TrainingScreenState extends State<TrainingScreen> {
       counts[c.symbol] = prefs.getInt('correct_${c.symbol}') ?? 0;
     }
 
-    // Determine active sections
-    final activeSections = <HangulSection>[];
-    for (var section in widget.sections) {
-      activeSections.add(section);
-      // Determine threshold: for vowel training permit advancing a section
-      // once the minimum correct count in the row reaches 3; otherwise
-      // use the existing threshold of 10.
-      final threshold = _isVowelTraining ? 3 : 10;
-      // Check if all characters in this section have at least `threshold`
-      // correct answers.
-      final minCorrect = section.characters
-          .map((c) => counts[c.symbol]!)
-          .reduce((a, b) => a < b ? a : b);
-      if (minCorrect < threshold) {
-        break; // Stop at the first section that doesn't meet the criteria
-      }
-    }
+    final summary = evaluateSectionUnlocks(
+      sections: widget.sections,
+      correctCounts: counts,
+    );
 
-    // Set active characters
+    final activeSections = summary.trainableSections;
     _characters = activeSections
         .expand((section) => section.characters)
         .toList();
@@ -673,10 +729,17 @@ class _TrainingScreenState extends State<TrainingScreen> {
       _characters = [..._characters, ...consonantTrainingWordPool];
     }
 
+    _retryQueue.clear();
+
     setState(() {
       _correctCounts = counts;
+      _sectionSummary = summary;
       _sessionCorrectCounts = {};
       _globalWrongCount = prefs.getInt('global_wrong_count') ?? 0;
+      _allowedConsonantCategories = _isConsonantTraining
+          ? _buildAllowedConsonantCategories(summary)
+          : const {ConsonantQuestionCategory.single};
+      _questionsServed = 0;
     });
     _startNewQuestion();
   }
@@ -697,79 +760,113 @@ class _TrainingScreenState extends State<TrainingScreen> {
     await prefs.setInt('global_wrong_count', _globalWrongCount);
   }
 
+  List<TrainingMode> get _trainingModes => const [
+    TrainingMode(GivenType.hangul, ChooseType.romanization),
+    TrainingMode(GivenType.hangul, ChooseType.sound),
+    TrainingMode(GivenType.sound, ChooseType.hangul),
+    TrainingMode(GivenType.romanization, ChooseType.hangul),
+  ];
+
   void _startNewQuestion() {
-    // Build available modes
-    final modes = [
-      TrainingMode(GivenType.hangul, ChooseType.romanization),
-      TrainingMode(GivenType.hangul, ChooseType.sound),
-      TrainingMode(GivenType.sound, ChooseType.hangul),
-      TrainingMode(GivenType.romanization, ChooseType.hangul),
-    ];
-
-    // Build list of candidate (character, mode) pairs and apply constraints:
-    // - not the same character as last
-    // - not the same mode as last
-    // - not already answered-correct in this session
-    final candidates = <MapEntry<HangulCharacter, TrainingMode>>[];
-
-    // If this is vowel training, include synthesized sequences (2-4 parts)
-    // made from vowel names (which already include leading ㅇ like '아').
-    List<HangulCharacter> poolCharacters = _characters;
-    if (_isVowelTraining) {
-      final sequences = _buildVowelSequencePool();
-      poolCharacters = [..._characters, ...sequences];
+    final modes = _trainingModes;
+    MapEntry<HangulCharacter, TrainingMode>? choice;
+    final dueRetry = _pullRetryQuestion();
+    if (dueRetry != null) {
+      choice = MapEntry(dueRetry.character, dueRetry.mode);
     }
 
-    for (final c in poolCharacters) {
-      for (final m in modes) {
-        final key = '${c.symbol}|${m.given.index}-${m.choose.index}';
-        if (_sessionCorrectPairs.contains(key)) continue;
-        if (_lastCharacterSymbol != null && c.symbol == _lastCharacterSymbol)
-          continue;
-        if (_lastMode != null &&
-            m.given == _lastMode!.given &&
-            m.choose == _lastMode!.choose)
-          continue;
-        candidates.add(MapEntry(c, m));
+    if (choice == null) {
+      final candidates = <MapEntry<HangulCharacter, TrainingMode>>[];
+
+      // If this is vowel training, include synthesized sequences (2-4 parts)
+      // made from vowel names (which already include leading ㅇ like '아').
+      List<HangulCharacter> poolCharacters = _characters;
+      if (_isVowelTraining) {
+        final sequences = _buildVowelSequencePool();
+        poolCharacters = [..._characters, ...sequences];
       }
-    }
 
-    // If no candidates remain under constraints, relax only the "not same mode"
-    // or the "not same character" rule in stages to avoid deadlocking too early.
-    if (candidates.isEmpty) {
-      for (final c in _characters) {
+      for (final c in poolCharacters) {
+        if (_isConsonantTraining &&
+            !_allowedConsonantCategories.contains(_categoryOf(c))) {
+          continue;
+        }
         for (final m in modes) {
           final key = '${c.symbol}|${m.given.index}-${m.choose.index}';
-          if (_sessionCorrectPairs.contains(key)) continue;
-          if (_lastCharacterSymbol != null && c.symbol == _lastCharacterSymbol)
+          if (_sessionCorrectPairs.contains(key)) {
             continue;
+          }
+          if (_lastCharacterSymbol != null &&
+              c.symbol == _lastCharacterSymbol) {
+            continue;
+          }
+          if (_lastMode != null &&
+              m.given == _lastMode!.given &&
+              m.choose == _lastMode!.choose) {
+            continue;
+          }
           candidates.add(MapEntry(c, m));
         }
       }
-    }
-    if (candidates.isEmpty) {
-      for (final c in _characters) {
-        for (final m in modes) {
-          final key = '${c.symbol}|${m.given.index}-${m.choose.index}';
-          if (_sessionCorrectPairs.contains(key)) continue;
-          candidates.add(MapEntry(c, m));
+
+      // If no candidates remain under constraints, relax only the "not same mode"
+      // or the "not same character" rule in stages to avoid deadlocking too early.
+      if (candidates.isEmpty) {
+        for (final c in poolCharacters) {
+          if (_isConsonantTraining &&
+              !_allowedConsonantCategories.contains(_categoryOf(c))) {
+            continue;
+          }
+          for (final m in modes) {
+            final key = '${c.symbol}|${m.given.index}-${m.choose.index}';
+            if (_sessionCorrectPairs.contains(key)) {
+              continue;
+            }
+            if (_lastCharacterSymbol != null &&
+                c.symbol == _lastCharacterSymbol) {
+              continue;
+            }
+            candidates.add(MapEntry(c, m));
+          }
         }
       }
-    }
+      if (candidates.isEmpty) {
+        for (final c in poolCharacters) {
+          if (_isConsonantTraining &&
+              !_allowedConsonantCategories.contains(_categoryOf(c))) {
+            continue;
+          }
+          for (final m in modes) {
+            final key = '${c.symbol}|${m.given.index}-${m.choose.index}';
+            if (_sessionCorrectPairs.contains(key)) {
+              continue;
+            }
+            candidates.add(MapEntry(c, m));
+          }
+        }
+      }
 
-    if (candidates.isEmpty) {
-      // No remaining unseen/correct-excluded problems: finish session
-      _showCompletionDialog();
-      return;
+      if (candidates.isEmpty) {
+        final forcedRetry = _pullRetryQuestion(force: true);
+        if (forcedRetry == null) {
+          _showCompletionDialog();
+          return;
+        }
+        choice = MapEntry(forcedRetry.character, forcedRetry.mode);
+      } else {
+        final choicePool = _isConsonantTraining
+            ? _prioritizeConsonantCandidates(candidates)
+            : candidates;
+        if (choicePool.isEmpty) {
+          _showCompletionDialog();
+          return;
+        }
+        choice = choicePool[_rand.nextInt(choicePool.length)];
+      }
     }
-
-    // Choose randomly from candidates with consonant bias if needed
-    final choicePool = _isConsonantTraining
-        ? _prioritizeConsonantCandidates(candidates)
-        : candidates;
-    final choice = choicePool[_rand.nextInt(choicePool.length)];
     _currentQuestion = choice.key;
     _currentMode = choice.value;
+    _questionsServed++;
 
     // Save last chosen for consecutive-avoidance
     _lastMode = _currentMode;
@@ -801,13 +898,23 @@ class _TrainingScreenState extends State<TrainingScreen> {
   }
 
   List<HangulCharacter> _buildVowelSequencePool() {
+    final summary = _sectionSummary;
+    if (summary == null) return const [];
+    final masteredSections = summary.statuses
+        .where((status) => status.isMastered)
+        .toList();
+    if (masteredSections.isEmpty) return const [];
+
+    final vowels = masteredSections
+        .expand((status) => status.section.characters)
+        .where((char) => char.type == HangulCharacterType.vowel)
+        .toList();
+    if (vowels.length < 2) return const [];
+
     // Build a pool of synthesized vowel sequences (length 2..4). We try to
     // prefer plausible/word-like small sequences and also include random
     // combinations so the user sees a variety. Names already include the
     // leading ㅇ (e.g. '아').
-    final vowels = _characters
-        .where((c) => c.type == HangulCharacterType.vowel)
-        .toList();
     final byName = {for (var v in vowels) v.name: v};
 
     final preferred = <List<HangulCharacter>>[];
@@ -832,7 +939,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
     final seqs = <String, HangulCharacter>{};
     final rand = _rand;
     // Include single vowels as well (but they already exist in _characters)
-    for (var v in vowels) {
+    for (final v in vowels) {
       seqs[v.name] = v;
     }
 
@@ -887,9 +994,13 @@ class _TrainingScreenState extends State<TrainingScreen> {
     final result = <ConsonantQuestionCategory>[];
     final visited = <ConsonantQuestionCategory>{};
     for (final item in order) {
+      if (!_allowedConsonantCategories.contains(item)) continue;
       if (visited.add(item)) {
         result.add(item);
       }
+    }
+    if (result.isEmpty) {
+      return const [ConsonantQuestionCategory.single];
     }
     return result;
   }
@@ -899,6 +1010,24 @@ class _TrainingScreenState extends State<TrainingScreen> {
     if (value < 0.15) return ConsonantQuestionCategory.single;
     if (value < 0.55) return ConsonantQuestionCategory.openSyllable;
     return ConsonantQuestionCategory.batchimWord;
+  }
+
+  Set<ConsonantQuestionCategory> _buildAllowedConsonantCategories(
+    SectionUnlockSummary summary,
+  ) {
+    final masteredCount = summary.statuses
+        .where((status) => status.isMastered)
+        .length;
+    final allowed = <ConsonantQuestionCategory>{
+      ConsonantQuestionCategory.single,
+    };
+    if (masteredCount >= 1) {
+      allowed.add(ConsonantQuestionCategory.openSyllable);
+    }
+    if (masteredCount >= 2) {
+      allowed.add(ConsonantQuestionCategory.batchimWord);
+    }
+    return allowed;
   }
 
   List<String> _generateOptions() {
@@ -1078,16 +1207,10 @@ class _TrainingScreenState extends State<TrainingScreen> {
             : _currentQuestion!.symbol;
       case GivenType.sound:
         // Will play TTS
-        return '🔊'; // Placeholder
+        return ''; // Placeholder
       case GivenType.romanization:
         return _currentQuestion!.romanization;
     }
-  }
-
-  String _meaningLine() {
-    final meaning = _currentQuestion?.meaning;
-    if (meaning == null || meaning.isEmpty) return '';
-    return '\n뜻: $meaning';
   }
 
   void _playSound(String symbol) async {
@@ -1120,8 +1243,6 @@ class _TrainingScreenState extends State<TrainingScreen> {
         _totalCorrect++;
         final sym = _currentQuestion!.symbol;
         _sessionCorrectCounts[sym] = (_sessionCorrectCounts[sym] ?? 0) + 1;
-        // Mark this (vowel, mode) pair as completed for this session so it
-        // won't be presented again until the training screen is recreated.
         final key =
             '${_currentQuestion!.symbol}|${_currentMode!.given.index}-${_currentMode!.choose.index}';
         _sessionCorrectPairs.add(key);
@@ -1134,12 +1255,13 @@ class _TrainingScreenState extends State<TrainingScreen> {
         _saveCounts();
       }
     });
+    if (!isCorrect && _currentQuestion != null && _currentMode != null) {
+      _scheduleRetry(_currentQuestion!, _currentMode!);
+    }
     _rememberCurrentWord();
-    if (_totalCorrect == 10) {
+    if (_totalCorrect == _sessionGoal) {
       await _updateCountsAndSave();
       _showCompletionDialog();
-    } else if (_totalCorrect == 9) {
-      _showPreCompletionDialog();
     }
   }
 
@@ -1193,6 +1315,64 @@ class _TrainingScreenState extends State<TrainingScreen> {
     }
   }
 
+  void _scheduleRetry(HangulCharacter character, TrainingMode mode) {
+    final exists = _retryQueue.any(
+      (entry) =>
+          entry.character.symbol == character.symbol &&
+          entry.mode.given == mode.given &&
+          entry.mode.choose == mode.choose,
+    );
+    if (exists) return;
+
+    final retryMode = _pickRetryMode(character, mode);
+    final availableAfter = _questionsServed + _minRetryGap;
+    _retryQueue.add(
+      _RetryQuestion(
+        character: character,
+        mode: retryMode,
+        availableAfter: availableAfter,
+      ),
+    );
+  }
+
+  TrainingMode _pickRetryMode(
+    HangulCharacter character,
+    TrainingMode failedMode,
+  ) {
+    final modes = _trainingModes;
+    final alternatives = modes
+        .where(
+          (mode) =>
+              mode.given != failedMode.given ||
+              mode.choose != failedMode.choose,
+        )
+        .toList();
+    final unused = alternatives.where((mode) {
+      final key =
+          '${character.symbol}|${mode.given.index}-${mode.choose.index}';
+      return !_sessionCorrectPairs.contains(key);
+    }).toList();
+    final pool = unused.isNotEmpty
+        ? unused
+        : (alternatives.isNotEmpty ? alternatives : modes);
+    return pool[_rand.nextInt(pool.length)];
+  }
+
+  _RetryQuestion? _pullRetryQuestion({bool force = false}) {
+    if (_retryQueue.isEmpty) return null;
+    _retryQueue.sort((a, b) => a.availableAfter.compareTo(b.availableAfter));
+    final readyIndex = _retryQueue.indexWhere(
+      (entry) => entry.availableAfter <= _questionsServed,
+    );
+    if (readyIndex != -1) {
+      return _retryQueue.removeAt(readyIndex);
+    }
+    if (force) {
+      return _retryQueue.removeAt(0);
+    }
+    return null;
+  }
+
   void _nextQuestion() {
     setState(() {
       _startNewQuestion();
@@ -1204,6 +1384,8 @@ class _TrainingScreenState extends State<TrainingScreen> {
       _totalCorrect = 0;
       _sessionCorrectPairs.clear();
       _sessionCorrectCounts.clear();
+      _retryQueue.clear();
+      _questionsServed = 0;
       _startNewQuestion();
     });
   }
@@ -1230,25 +1412,6 @@ class _TrainingScreenState extends State<TrainingScreen> {
     // Show interstitial ad here
   }
 
-  void _showPreCompletionDialog() {
-    showDialog(
-      context: context,
-      builder: (_) => LearnHangulDialog(
-        title: '훈련 종료 안내',
-        message: '세션이 끝나면 지금까지 맞힌 문제들의 정답 카운트가 올라갑니다. 계속하시겠습니까?',
-        variant: LearnHangulDialogVariant.info,
-        actions: [
-          LearnHangulDialogAction(
-            label: '계속하기',
-            onTap: () {
-              // Just close dialog, continue to next question
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showAdDialog() {
     showDialog(
       context: context,
@@ -1270,17 +1433,19 @@ class _TrainingScreenState extends State<TrainingScreen> {
     final typography = LearnHangulTheme.typographyOf(context);
 
     final bool canCheck = !_showResult && _selectedOption != null;
-    final bool canAdvance = _showResult && _totalCorrect < 10;
+    final bool canAdvance = _showResult && _totalCorrect < _sessionGoal;
     final String buttonLabel = !_showResult
         ? '정답 확인'
-        : (_totalCorrect >= 10 ? '완료' : '다음 문제');
+        : (_totalCorrect >= _sessionGoal ? '완료' : '다음 문제');
     final VoidCallback? primaryAction = !_showResult
         ? (canCheck ? _checkAnswer : null)
         : (canAdvance ? _nextQuestion : null);
-    final meaningLine = _meaningLine();
 
     return Scaffold(
       body: SafeArea(
+        // Avoid adding bottom safe-area padding here so the action button's
+        // bottom offset lines up with other screens that don't use SafeArea.
+        bottom: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
           child: Column(
@@ -1290,14 +1455,16 @@ class _TrainingScreenState extends State<TrainingScreen> {
                   LiquidGlassButtons.circularIconButton(
                     context,
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: Icons.arrow_back,
+                    // Use Cupertino chevron instead of Material arrow
+                    icon: CupertinoIcons.left_chevron,
+                    isBackgroundBright: false,
                   ),
                   const SizedBox(width: 16),
                   _buildProgressMeter(
                     context: context,
                     label: '맞힌 문제',
                     value: _totalCorrect,
-                    goal: 10,
+                    goal: _sessionGoal,
                     color: palette.success,
                   ),
                   const SizedBox(width: 16),
@@ -1311,34 +1478,39 @@ class _TrainingScreenState extends State<TrainingScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              LearnHangulSurface(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 32,
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      _getGivenDisplay(),
-                      style: typography.hero.copyWith(fontSize: 40),
+              if (_currentMode!.given == GivenType.sound)
+                IntrinsicWidth(
+                  child: LearnHangulSurface(
+                    backgroundColor: palette.elevatedSurface,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 32,
                     ),
-                    if (_currentMode!.given == GivenType.sound)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 16),
-                        child: LiquidGlassButton(
-                          label: '발음 다시 듣기',
-                          leading: Icon(
-                            Icons.volume_up_rounded,
-                            color: palette.primaryText,
-                          ),
-                          variant: LiquidGlassButtonVariant.secondary,
-                          expand: false,
-                          onPressed: () => _playSound(_currentQuestion!.symbol),
-                        ),
+                    onTap: () => _playSound(_currentQuestion!.symbol),
+                    child: Center(
+                      child: Icon(
+                        Icons.volume_up_rounded,
+                        size: 40,
+                        color: palette.primaryText,
                       ),
-                  ],
+                    ),
+                  ),
+                )
+              else
+                LearnHangulSurface(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 32,
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        _getGivenDisplay(),
+                        style: typography.hero.copyWith(fontSize: 40),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
               const SizedBox(height: 16),
               Expanded(
                 child: GridView.builder(
@@ -1368,23 +1540,22 @@ class _TrainingScreenState extends State<TrainingScreen> {
                   },
                 ),
               ),
-              if (_showResult) ...[
-                const SizedBox(height: 12),
-                LearnHangulNotice(
-                  title: _isCorrect ? '정답이에요' : '다시 시도해요',
-                  message: _isCorrect
-                      ? '${_getCorrectOption()} 발음을 정확히 기억하고 있어요.$meaningLine'
-                      : '정답은 ${_getCorrectOption()} 입니다. 다음 문제에서 만회해보세요.$meaningLine',
-                  type: _isCorrect
-                      ? LearnHangulNoticeType.success
-                      : LearnHangulNoticeType.warning,
-                ),
-              ],
+              // Result notice intentionally hidden per UX change.
               const SizedBox(height: 12),
-              LiquidGlassButton(
-                label: buttonLabel,
-                onPressed: primaryAction,
-                variant: LiquidGlassButtonVariant.primary,
+              Padding(
+                // Outer horizontal padding of this screen is 20; add 4 to reach
+                // the 24 horizontal padding used by the main screens. Also
+                // add 12 bottom here so combined bottom padding equals 24.
+                padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
+                child: LiquidGlassButton(
+                  label: buttonLabel,
+                  onPressed: primaryAction,
+                  variant: _showResult
+                      ? (_isCorrect
+                            ? LiquidGlassButtonVariant.success
+                            : LiquidGlassButtonVariant.danger)
+                      : LiquidGlassButtonVariant.primary,
+                ),
               ),
             ],
           ),
@@ -1465,7 +1636,6 @@ class _TrainingScreenState extends State<TrainingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: typography.caption),
           const SizedBox(height: 6),
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
@@ -1482,4 +1652,16 @@ class _TrainingScreenState extends State<TrainingScreen> {
       ),
     );
   }
+}
+
+class _RetryQuestion {
+  _RetryQuestion({
+    required this.character,
+    required this.mode,
+    required this.availableAfter,
+  });
+
+  final HangulCharacter character;
+  final TrainingMode mode;
+  int availableAfter;
 }

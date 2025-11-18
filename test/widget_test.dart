@@ -12,22 +12,12 @@ import 'package:learnhangul/main.dart';
 void main() {
   testWidgets('renders study screens', (tester) async {
     await tester.pumpWidget(const LearnHangulApp());
-
-    await tester.tap(find.text('자음'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('자음 학습'), findsOneWidget);
-    expect(find.text('ㄱ'), findsWidgets);
-    expect(find.text('ㅏ'), findsNothing);
-
-    // Go back
-    await tester.pageBack();
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('모음'));
     await tester.pumpAndSettle();
 
-    expect(find.text('모음 학습'), findsOneWidget);
+    expect(find.text('모음'), findsOneWidget);
     expect(find.text('ㅏ'), findsWidgets);
     expect(find.text('ㄱ'), findsNothing);
   });

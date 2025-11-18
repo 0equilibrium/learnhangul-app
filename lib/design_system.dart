@@ -311,7 +311,7 @@ class LearnHangulTheme {
   }
 }
 
-enum LiquidGlassButtonVariant { primary, secondary, ghost }
+enum LiquidGlassButtonVariant { primary, secondary, ghost, success, danger }
 
 class LiquidGlassButton extends StatelessWidget {
   const LiquidGlassButton({
@@ -322,6 +322,7 @@ class LiquidGlassButton extends StatelessWidget {
     this.expand = true,
     this.leading,
     this.trailing,
+    this.labelStyle,
   });
 
   final String label;
@@ -330,6 +331,7 @@ class LiquidGlassButton extends StatelessWidget {
   final bool expand;
   final Widget? leading;
   final Widget? trailing;
+  final TextStyle? labelStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -339,27 +341,43 @@ class LiquidGlassButton extends StatelessWidget {
 
     final textColor = variant == LiquidGlassButtonVariant.primary
         ? palette.primaryText
+        : variant == LiquidGlassButtonVariant.success
+        ? palette.success
+        : variant == LiquidGlassButtonVariant.danger
+        ? palette.danger
         : palette.secondaryText;
     final labelWidget = Text(
       label,
       textAlign: expand ? TextAlign.center : TextAlign.start,
-      style: typography.label.copyWith(
-        color: textColor.withOpacity(onPressed == null ? 0.5 : 1.0),
-        fontSize: 16,
-      ),
+      style: typography.label
+          .copyWith(
+            color: textColor.withOpacity(onPressed == null ? 0.5 : 1.0),
+            fontSize: 16,
+          )
+          .merge(labelStyle),
     );
+
+    final borderColor = variant == LiquidGlassButtonVariant.success
+        ? palette.success
+        : variant == LiquidGlassButtonVariant.danger
+        ? palette.danger
+        : (isDark
+              ? Colors.white.withOpacity(0.03)
+              : Colors.white.withOpacity(0.4));
+
+    final glassColor = variant == LiquidGlassButtonVariant.success
+        ? palette.success.withOpacity(0.12)
+        : variant == LiquidGlassButtonVariant.danger
+        ? palette.danger.withOpacity(0.12)
+        : (isDark ? const Color(0x1AFFFFFF) : const Color(0x33FFFFFF));
 
     final content = CupertinoButton(
       padding: EdgeInsets.zero,
       onPressed: onPressed,
       child: Container(
         decoration: BoxDecoration(
-          border: Border.all(
-            color: isDark
-                ? Colors.white.withOpacity(0.03)
-                : Colors.white.withOpacity(0.4),
-            width: 2,
-          ),
+          color: glassColor,
+          border: Border.all(color: borderColor, width: 2),
           borderRadius: BorderRadius.circular(36),
         ),
         width: expand ? double.infinity : null,
@@ -384,7 +402,7 @@ class LiquidGlassButton extends StatelessWidget {
     return LiquidGlassLayer(
       settings: LiquidGlassSettings(
         thickness: 5,
-        glassColor: isDark ? const Color(0x1AFFFFFF) : const Color(0x33FFFFFF),
+        glassColor: glassColor,
         lightIntensity: 1.5,
       ),
       child: LiquidGlass(
@@ -502,7 +520,6 @@ class LearnHangulDialog extends StatelessWidget {
       case LearnHangulDialogVariant.danger:
         return Icons.error_outline_rounded;
       case LearnHangulDialogVariant.info:
-      default:
         return Icons.info_outline_rounded;
     }
   }
@@ -516,7 +533,6 @@ class LearnHangulDialog extends StatelessWidget {
       case LearnHangulDialogVariant.danger:
         return palette.danger;
       case LearnHangulDialogVariant.info:
-      default:
         return palette.info;
     }
   }
@@ -568,7 +584,6 @@ class LearnHangulSnackbar {
       case LearnHangulSnackTone.danger:
         return palette.danger;
       case LearnHangulSnackTone.neutral:
-      default:
         return palette.secondaryText;
     }
   }
@@ -628,7 +643,6 @@ class LearnHangulNotice extends StatelessWidget {
       case LearnHangulNoticeType.warning:
         return Icons.warning_amber_rounded;
       case LearnHangulNoticeType.info:
-      default:
         return Icons.info_outline_rounded;
     }
   }
@@ -640,7 +654,6 @@ class LearnHangulNotice extends StatelessWidget {
       case LearnHangulNoticeType.warning:
         return palette.warning;
       case LearnHangulNoticeType.info:
-      default:
         return palette.info;
     }
   }
@@ -712,31 +725,59 @@ class LearnHangulSurface extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(24),
     this.margin,
+    this.backgroundColor,
+    this.onTap,
   });
 
   final Widget child;
   final EdgeInsetsGeometry padding;
   final EdgeInsetsGeometry? margin;
+  final Color? backgroundColor;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final palette = LearnHangulTheme.paletteOf(context);
-    return Container(
-      margin: margin,
-      padding: padding,
-      decoration: BoxDecoration(
-        color: palette.elevatedSurface,
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: palette.outline),
-        boxShadow: [
-          BoxShadow(
-            color: palette.primaryText.withOpacity(0.04),
-            blurRadius: 24,
-            offset: const Offset(0, 18),
-          ),
-        ],
+    if (onTap == null) {
+      return Container(
+        margin: margin,
+        padding: padding,
+        decoration: BoxDecoration(
+          color: backgroundColor ?? palette.elevatedSurface,
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: palette.outline),
+          boxShadow: [
+            BoxShadow(
+              color: palette.primaryText.withOpacity(0.04),
+              blurRadius: 24,
+              offset: const Offset(0, 18),
+            ),
+          ],
+        ),
+        child: child,
+      );
+    }
+
+    return CupertinoButton(
+      padding: EdgeInsets.zero,
+      onPressed: onTap,
+      child: Container(
+        margin: margin,
+        padding: padding,
+        decoration: BoxDecoration(
+          color: backgroundColor ?? palette.elevatedSurface,
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: palette.outline),
+          boxShadow: [
+            BoxShadow(
+              color: palette.primaryText.withOpacity(0.04),
+              blurRadius: 24,
+              offset: const Offset(0, 18),
+            ),
+          ],
+        ),
+        child: child,
       ),
-      child: child,
     );
   }
 }
@@ -771,11 +812,19 @@ class LearnHangulAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: palette.background,
       foregroundColor: palette.primaryText,
       elevation: 0,
-      title: Text(title, style: typography.heading),
+      title: Text(title, style: typography.heading.copyWith(fontSize: 20)),
       leading: showLeading
-          ? LiquidGlassButtons.circularIconButton(
-              context,
-              onPressed: () => Navigator.pop(context),
+          ? Container(
+              width: 77,
+              height: 77,
+              alignment: Alignment.center,
+              child: LiquidGlassButtons.circularIconButton(
+                context,
+                onPressed: () => Navigator.of(context).pop(),
+                // Use Cupertino chevron instead of Material arrow
+                icon: CupertinoIcons.left_chevron,
+                isBackgroundBright: false,
+              ),
             )
           : null,
       actions: trailing == null ? null : [trailing!],
