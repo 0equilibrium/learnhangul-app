@@ -571,11 +571,22 @@ class LearnedWordsScreen extends StatefulWidget {
 class _LearnedWordsScreenState extends State<LearnedWordsScreen> {
   List<LearnedWordEntry> _words = const [];
   bool _isLoading = true;
+  final FlutterTts _flutterTts = FlutterTts();
 
   @override
   void initState() {
     super.initState();
     _loadWords();
+    _flutterTts.setLanguage('ko-KR');
+    // slow down speech rate so it's audible on most devices
+    _flutterTts.setSpeechRate(0.5);
+    _flutterTts.setPitch(1.0);
+  }
+
+  @override
+  void dispose() {
+    _flutterTts.stop();
+    super.dispose();
   }
 
   Future<void> _loadWords() async {
@@ -606,24 +617,8 @@ class _LearnedWordsScreenState extends State<LearnedWordsScreen> {
     }
   }
 
-  String _formatRelative(DateTime seenAt) {
-    final now = DateTime.now();
-    final diff = now.difference(seenAt);
-    if (diff.inDays >= 1) {
-      final local = seenAt.toLocal();
-      final month = local.month.toString().padLeft(2, '0');
-      final day = local.day.toString().padLeft(2, '0');
-      final hour = local.hour.toString().padLeft(2, '0');
-      final minute = local.minute.toString().padLeft(2, '0');
-      return '$month/$day $hour:$minute';
-    }
-    if (diff.inHours >= 1) {
-      return '${diff.inHours}시간 전';
-    }
-    if (diff.inMinutes >= 1) {
-      return '${diff.inMinutes}분 전';
-    }
-    return '방금 전';
+  Future<void> _speak(String text) async {
+    await _flutterTts.speak(text);
   }
 
   @override
@@ -671,52 +666,31 @@ class _LearnedWordsScreenState extends State<LearnedWordsScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           itemBuilder: (context, index) {
             final word = _words[index];
-            return LearnHangulSurface(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    word.term,
-                    style: typography.hero.copyWith(fontSize: 36),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Text(word.romanization, style: typography.caption),
-                      if (word.meaning != null) ...[
-                        const SizedBox(width: 12),
-                        Text('·', style: typography.caption),
-                        const SizedBox(width: 12),
-                        Text(word.meaning!, style: typography.caption),
+            return GestureDetector(
+              onTap: () => _speak(word.term),
+              child: LearnHangulSurface(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      word.term,
+                      style: typography.hero.copyWith(fontSize: 36),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Text(word.romanization, style: typography.caption),
+                        if (word.meaning != null) ...[
+                          const SizedBox(width: 12),
+                          Text('·', style: typography.caption),
+                          const SizedBox(width: 12),
+                          Text(word.meaning!, style: typography.caption),
+                        ],
                       ],
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.timer_outlined,
-                        size: 18,
-                        color: palette.secondaryText,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _formatRelative(word.seenAt),
-                        style: typography.body.copyWith(
-                          color: palette.secondaryText,
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        '학습 ${word.timesSeen}회',
-                        style: typography.body.copyWith(
-                          color: palette.secondaryText,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -799,9 +773,9 @@ class _TrainingScreenState extends State<TrainingScreen> {
   HangulCharacter _synthesizeSequence(List<HangulCharacter> parts) {
     final display = parts.map((p) => p.name).join();
     // Join romanizations with '/' so multi-part sequences are unambiguous
-    // (e.g. 'o/eo/u/i'). For single-part sequences this will just be the
-    // single romanization.
-    final roman = parts.map((p) => p.romanization).join('/');
+    // (e.g. 'o-eo-u-i'). For single-part sequences this will just be the
+    // single romanization. Use '-' as separator so it matches display style.
+    final roman = parts.map((p) => p.romanization).join('-');
     return HangulCharacter(
       symbol: display,
       name: display,
@@ -821,7 +795,18 @@ class _TrainingScreenState extends State<TrainingScreen> {
   void initState() {
     super.initState();
     _flutterTts.setLanguage('ko-KR');
+    // slower rate for vowel and consonant training so sequences are clearer
+    _flutterTts.setSpeechRate(
+      (_isVowelTraining || _isConsonantTraining) ? 0.35 : 0.5,
+    );
+    _flutterTts.setPitch(1.0);
     _loadCounts();
+  }
+
+  @override
+  void dispose() {
+    _flutterTts.stop();
+    super.dispose();
   }
 
   Future<void> _loadCounts() async {
@@ -938,6 +923,15 @@ class _TrainingScreenState extends State<TrainingScreen> {
         reviewPool.addAll(sequences);
       }
 
+      if (_isConsonantTraining) {
+        bool isCategoryAllowed(HangulCharacter char) {
+          return _allowedConsonantCategories.contains(_categoryOf(char));
+        }
+
+        targetPool = targetPool.where(isCategoryAllowed).toList();
+        reviewPool = reviewPool.where(isCategoryAllowed).toList();
+      }
+
       // 2. Weighted Selection: 70% New Row, 30% Review
       bool useTargetPool = false;
       if (targetPool.isNotEmpty && reviewPool.isNotEmpty) {
@@ -945,8 +939,25 @@ class _TrainingScreenState extends State<TrainingScreen> {
         useTargetPool = _rand.nextDouble() < 0.7;
       } else if (targetPool.isNotEmpty) {
         useTargetPool = true;
-      } else {
+      } else if (reviewPool.isNotEmpty) {
         useTargetPool = false;
+      } else {
+        // All pools were filtered out (e.g., review only had disallowed categories).
+        // Fall back to any eligible consonant so the session cannot end early.
+        if (_isConsonantTraining) {
+          final fallbackPool = _characters.where((c) {
+            return _allowedConsonantCategories.contains(_categoryOf(c));
+          }).toList();
+          if (fallbackPool.isNotEmpty) {
+            targetPool = fallbackPool;
+          } else {
+            targetPool = List.from(_characters);
+          }
+        } else {
+          targetPool = List.from(_characters);
+        }
+        reviewPool = <HangulCharacter>[];
+        useTargetPool = true;
       }
 
       final sourcePool = useTargetPool ? targetPool : reviewPool;
@@ -1383,7 +1394,39 @@ class _TrainingScreenState extends State<TrainingScreen> {
     }
 
     optionsPool.shuffle();
-    final selectedOthers = optionsPool
+
+    // Work with HangulCharacter objects so we can reliably enforce
+    // sequence-length constraints (e.g. when the question is a 2..4
+    // syllable vowel sequence). We'll pick up to 5 other characters and
+    // then add the correct one, ensuring all displayed options match the
+    // required length when `enforceSequenceLength` is true.
+    final selectedCharOthers = optionsPool.take(5).toList();
+
+    if (enforceSequenceLength && question.name.length >= 2) {
+      selectedCharOthers.retainWhere(
+        (c) => c.name.length == question.name.length,
+      );
+
+      // Try to top up from the pool with items matching the required length.
+      for (final candidate in optionsPool) {
+        if (selectedCharOthers.length >= 5) break;
+        if (selectedCharOthers.contains(candidate)) continue;
+        if (candidate.name.length != question.name.length) continue;
+        selectedCharOthers.add(candidate);
+      }
+
+      // If still short, allow any remaining pool items (best-effort fallback).
+      for (final candidate in optionsPool) {
+        if (selectedCharOthers.length >= 5) break;
+        if (selectedCharOthers.contains(candidate)) continue;
+        selectedCharOthers.add(candidate);
+      }
+    }
+
+    // Ensure we don't duplicate the correct option in the 'others' list.
+    selectedCharOthers.removeWhere((c) => _getOptionValue(c) == correct);
+
+    final selectedOthers = selectedCharOthers
         .take(5)
         .map((c) => _getOptionValue(c))
         .toList();
