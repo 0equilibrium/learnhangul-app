@@ -7,6 +7,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'custom_list_widgets.dart';
+import 'custom_liquid_glass_dialog.dart';
 import 'design_system.dart';
 import 'liquid_glass_buttons.dart';
 import 'models.dart';
@@ -123,10 +125,23 @@ class _VowelLearningScreenState extends State<VowelLearningScreen> {
   void _showVowelLockedRowDialog() {
     showDialog(
       context: context,
-      builder: (_) => LearnHangulDialog(
-        title: '새로운 행 해제',
-        message: '앞선 행의 모든 모음을 각각 $kRowUnlockThreshold회 이상 맞히면 다음 행이 열립니다.',
-        variant: LearnHangulDialogVariant.info,
+      barrierDismissible: true,
+      useRootNavigator: false,
+      barrierColor: Colors.black.withOpacity(0.3),
+      builder: (_) => Center(
+        child: CustomLiquidGlassDialog(
+          title: const Text('새로운 행 해제'),
+          content: Text(
+            '앞선 행의 모든 모음을 각각 $kRowUnlockThreshold회 이상 맞히면 다음 행이 열립니다.',
+          ),
+          actions: [
+            CustomLiquidGlassDialogAction(
+              isConfirmationBlue: true,
+              onPressed: () => Navigator.pop(context),
+              child: const Text('확인'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -232,10 +247,23 @@ class _ConsonantLearningScreenState extends State<ConsonantLearningScreen> {
   void _showConsonantLockedRowDialog() {
     showDialog(
       context: context,
-      builder: (_) => LearnHangulDialog(
-        title: '새로운 행 해제',
-        message: '앞선 자음 행의 모든 글자를 $kRowUnlockThreshold회 이상 맞히면 다음 행이 열립니다.',
-        variant: LearnHangulDialogVariant.info,
+      barrierDismissible: true,
+      useRootNavigator: false,
+      barrierColor: Colors.black.withOpacity(0.3),
+      builder: (_) => Center(
+        child: CustomLiquidGlassDialog(
+          title: const Text('새로운 행 해제'),
+          content: Text(
+            '앞선 자음 행의 모든 글자를 $kRowUnlockThreshold회 이상 맞히면 다음 행이 열립니다.',
+          ),
+          actions: [
+            CustomLiquidGlassDialogAction(
+              isConfirmationBlue: true,
+              onPressed: () => Navigator.pop(context),
+              child: const Text('확인'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -341,51 +369,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _confirmReset() {
     showDialog(
       context: context,
-      builder: (_) => LearnHangulDialog(
-        title: '학습 데이터 초기화',
-        message: '맞힌 기록과 음절 진행도가 모두 삭제됩니다. 계속할까요?',
-        variant: LearnHangulDialogVariant.danger,
-        actions: [
-          LearnHangulDialogAction(label: '취소'),
-          LearnHangulDialogAction(
-            label: '초기화',
-            isPrimary: true,
-            onTap: () {
-              LearnHangulSnackbar.show(
-                context,
-                message: '데이터를 초기화했어요.',
-                tone: LearnHangulSnackTone.danger,
-              );
-            },
-          ),
-        ],
+      barrierDismissible: true,
+      useRootNavigator: false,
+      barrierColor: Colors.black.withOpacity(0.3),
+      builder: (_) => Center(
+        child: CustomLiquidGlassDialog(
+          title: const Text('학습 데이터 초기화'),
+          content: const Text('맞힌 기록과 음절 진행도가 모두 삭제됩니다. 계속할까요?'),
+          actions: [
+            CustomLiquidGlassDialogAction(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('취소'),
+            ),
+            CustomLiquidGlassDialogAction(
+              isDestructiveAction: true,
+              onPressed: () {
+                Navigator.pop(context);
+                LearnHangulSnackbar.show(
+                  context,
+                  message: '데이터를 초기화했어요.',
+                  tone: LearnHangulSnackTone.danger,
+                );
+              },
+              child: const Text('초기화'),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final typography = LearnHangulTheme.typographyOf(context);
+    final palette = LearnHangulTheme.paletteOf(context);
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: LearnHangulAppBar('설정'),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-        children: [
-          const LearnHangulNotice(
-            title: '진행 상황',
-            message: '연습 목표와 알림을 조정해 스스로에게 가장 잘 맞는 리듬을 만들어 보세요.',
-          ),
-          const SizedBox(height: 24),
-          LearnHangulSurface(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: palette.background,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            const SizedBox(height: 6),
+            CustomListSection.insetGrouped(
+              header: const Text('학습'),
               children: [
-                Text('학습 흐름', style: typography.subtitle),
-                const SizedBox(height: 16),
-                LearnHangulListTile(
-                  title: '저녁 리마인더',
-                  subtitle: '매일 19시에 학습 알림 받기',
+                CustomListTile(
+                  backgroundColor: palette.surface,
+                  title: Text(
+                    '저녁 리마인더',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  subtitle: const Text('매일 19시에 학습 알림 받기'),
                   leading: const Icon(Icons.alarm_rounded),
                   trailing: Switch.adaptive(
                     value: _reminderEnabled,
@@ -393,10 +430,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   onTap: () => _toggleReminder(!_reminderEnabled),
                 ),
-                const SizedBox(height: 12),
-                LearnHangulListTile(
-                  title: 'TTS 힌트',
-                  subtitle: '문제를 풀 때 자동으로 음성 힌트 듣기',
+                CustomListTile(
+                  backgroundColor: palette.surface,
+                  title: Text(
+                    'TTS 힌트',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  subtitle: const Text('문제를 풀 때 자동으로 음성 힌트 듣기'),
                   leading: const Icon(Icons.hearing_rounded),
                   trailing: Switch.adaptive(
                     value: _ttsHintsEnabled,
@@ -406,27 +448,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 24),
-          LearnHangulSurface(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 6),
+            CustomListSection.insetGrouped(
+              header: const Text('지원'),
               children: [
-                Text('계정 및 도움', style: typography.subtitle),
-                const SizedBox(height: 12),
-                LearnHangulListTile(
-                  title: '진행 데이터 초기화',
-                  subtitle: '맞힌 수와 섹션 잠금 해제를 모두 삭제합니다',
-                  leading: const Icon(Icons.delete_sweep_rounded),
-                  onTap: _confirmReset,
-                  variant: LearnHangulListTileVariant.danger,
+                CustomListTile(
+                  backgroundColor: palette.surface,
+                  title: Text(
+                    '이용 약관',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  leading: const Icon(CupertinoIcons.doc_text),
+                  trailing: const Icon(CupertinoIcons.chevron_right),
+                  onTap: () {
+                    // TODO: Navigate to Terms screen
+                    LearnHangulSnackbar.show(
+                      context,
+                      message: '이용 약관 페이지로 이동합니다.',
+                      tone: LearnHangulSnackTone.neutral,
+                    );
+                  },
                 ),
-                const SizedBox(height: 12),
-                LearnHangulListTile(
-                  title: '피드백 보내기',
-                  subtitle: '디자인 개선 의견 공유하기',
-                  leading: const Icon(Icons.email_outlined),
-                  trailing: const Icon(Icons.open_in_new_rounded),
+                CustomListTile(
+                  backgroundColor: palette.surface,
+                  title: Text(
+                    '도움말 센터',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  leading: const Icon(CupertinoIcons.question_circle),
+                  trailing: const Icon(CupertinoIcons.chevron_right),
+                  onTap: () {
+                    // TODO: Navigate to Help Center screen
+                    LearnHangulSnackbar.show(
+                      context,
+                      message: '도움말 센터로 이동합니다.',
+                      tone: LearnHangulSnackTone.neutral,
+                    );
+                  },
+                ),
+                CustomListTile(
+                  backgroundColor: palette.surface,
+                  title: Text(
+                    '문의하기',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  subtitle: const Text('feedback@learnhangul.app'),
+                  leading: const Icon(CupertinoIcons.mail),
+                  trailing: const Icon(CupertinoIcons.chevron_right),
                   onTap: () {
                     LearnHangulSnackbar.show(
                       context,
@@ -437,8 +511,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 6),
+            CustomListSection.insetGrouped(
+              header: const Text('계정'),
+              children: [
+                CustomListTile(
+                  backgroundColor: palette.surface,
+                  title: Text(
+                    '진행 데이터 초기화',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.red[300] : Colors.red,
+                    ),
+                  ),
+                  subtitle: const Text('맞힌 수와 섹션 잠금 해제를 모두 삭제합니다'),
+                  leading: Icon(
+                    Icons.delete_sweep_rounded,
+                    color: isDarkMode ? Colors.red[300] : Colors.red,
+                  ),
+                  onTap: _confirmReset,
+                ),
+              ],
+            ),
+            const SizedBox(height: 100),
+          ],
+        ),
       ),
     );
   }
@@ -1393,20 +1489,31 @@ class _TrainingScreenState extends State<TrainingScreen> {
   void _showCompletionDialog() {
     showDialog(
       context: context,
-      builder: (_) => LearnHangulDialog(
-        title: '훈련 완료!',
-        message: '총 맞힌 수: $_totalCorrect, 틀린 수: $_globalWrongCount',
-        variant: LearnHangulDialogVariant.success,
-        actions: [
-          LearnHangulDialogAction(label: '한 번 더 풀기', onTap: _restartSession),
-          LearnHangulDialogAction(
-            label: '홈으로 가기',
-            isPrimary: true,
-            onTap: () {
-              Navigator.of(context).pop();
-            },
+      barrierDismissible: false,
+      useRootNavigator: false,
+      barrierColor: Colors.black.withOpacity(0.3),
+      builder: (_) => WillPopScope(
+        onWillPop: () async => false,
+        child: Center(
+          child: CustomLiquidGlassDialog(
+            title: const Text('훈련 완료!'),
+            content: Text('총 맞힌 수: $_totalCorrect, 틀린 수: $_globalWrongCount'),
+            actions: [
+              CustomLiquidGlassDialogAction(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _restartSession();
+                },
+                child: const Text('한 번 더 풀기'),
+              ),
+              CustomLiquidGlassDialogAction(
+                isConfirmationBlue: true,
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('홈으로 가기'),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
     // Show interstitial ad here
@@ -1415,10 +1522,21 @@ class _TrainingScreenState extends State<TrainingScreen> {
   void _showAdDialog() {
     showDialog(
       context: context,
-      builder: (_) => const LearnHangulDialog(
-        title: '잠깐 숨 돌려요',
-        message: '집중력이 흔들릴 땐 짧은 광고나 스트레칭으로 리셋해주세요.',
-        variant: LearnHangulDialogVariant.warning,
+      barrierDismissible: false,
+      useRootNavigator: false,
+      barrierColor: Colors.black.withOpacity(0.3),
+      builder: (_) => Center(
+        child: CustomLiquidGlassDialog(
+          title: const Text('잠깐 숨 돌려요'),
+          content: const Text('집중력이 흔들릴 땐 짧은 광고나 스트레칭으로 리셋해주세요.'),
+          actions: [
+            CustomLiquidGlassDialogAction(
+              isConfirmationBlue: true,
+              onPressed: () => Navigator.pop(context),
+              child: const Text('확인'),
+            ),
+          ],
+        ),
       ),
     );
   }

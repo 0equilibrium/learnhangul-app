@@ -12,10 +12,8 @@ Future<void> showCharacterDetails(
 ) {
   return showModalBottomSheet<void>(
     context: context,
-    showDragHandle: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-    ),
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
     builder: (_) => CharacterDetailSheet(character: character),
   );
 }
@@ -498,58 +496,104 @@ class _CharacterDetailSheetState extends State<CharacterDetailSheet> {
   Widget build(BuildContext context) {
     final palette = LearnHangulTheme.paletteOf(context);
     final typography = LearnHangulTheme.typographyOf(context);
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 24,
-        right: 24,
-        top: 24,
-        bottom: 24 + MediaQuery.of(context).viewPadding.bottom,
+    return Container(
+      margin: const EdgeInsets.only(top: 100),
+      decoration: BoxDecoration(
+        color: isDarkMode
+            ? Colors.black.withValues(alpha: 0.85)
+            : const Color(0xffF1F2F4),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(34)),
+        border: Border.all(
+          color: isDarkMode
+              ? Colors.white.withValues(alpha: 0.2)
+              : Colors.white.withValues(alpha: 0.5),
+          width: 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.16),
+            blurRadius: 56.0,
+            offset: const Offset(0, -28),
+            spreadRadius: 14,
+          ),
+        ],
       ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Align(
-              child: Container(
-                width: 110,
-                height: 110,
-                decoration: BoxDecoration(
-                  color: palette.surface,
-                  borderRadius: BorderRadius.circular(32),
-                  border: Border.all(color: palette.outline),
-                ),
-                child: Center(
-                  child: Text(widget.character.symbol, style: typography.hero),
-                ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 36,
+            height: 5,
+            decoration: BoxDecoration(
+              color: isDarkMode
+                  ? Colors.white.withValues(alpha: 0.3)
+                  : Colors.black.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(2.5),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 24,
+              bottom: 24 + MediaQuery.of(context).viewPadding.bottom,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Align(
+                    child: Container(
+                      width: 110,
+                      height: 110,
+                      decoration: BoxDecoration(
+                        color: palette.surface,
+                        borderRadius: BorderRadius.circular(32),
+                        border: Border.all(color: palette.outline),
+                      ),
+                      child: Center(
+                        child: Text(
+                          widget.character.symbol,
+                          style: typography.hero,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(widget.character.name, style: typography.heading),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        'Romanization • ${widget.character.romanization}',
+                        style: typography.body.copyWith(color: palette.info),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: Icon(
+                          Icons.volume_up_rounded,
+                          color: palette.info,
+                        ),
+                        onPressed: _speakCharacter,
+                        tooltip: '발음 듣기',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _InfoRow(
+                    icon: Icons.volume_up_outlined,
+                    label: '예시 단어',
+                    value: widget.character.example,
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
-            Text(widget.character.name, style: typography.heading),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Text(
-                  'Romanization • ${widget.character.romanization}',
-                  style: typography.body.copyWith(color: palette.info),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: Icon(Icons.volume_up_rounded, color: palette.info),
-                  onPressed: _speakCharacter,
-                  tooltip: '발음 듣기',
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _InfoRow(
-              icon: Icons.volume_up_outlined,
-              label: '예시 단어',
-              value: widget.character.example,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

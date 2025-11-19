@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'design_system.dart';
 import 'models.dart';
 import 'screens.dart';
+import 'custom_liquid_glass_dialog.dart';
 import 'utils.dart';
 
 class LearnHangulHomePage extends StatefulWidget {
@@ -63,35 +64,60 @@ class _LearnHangulHomePageState extends State<LearnHangulHomePage> {
   }
 
   void _showConsonantLockedDialog(BuildContext context) {
-    final actions = <LearnHangulDialogAction>[
-      const LearnHangulDialogAction(label: '확인', isPrimary: true),
-    ];
+    // Build actions for CustomLiquidGlassDialog. When in debug mode, stack
+    // the confirmation and debug-unlock buttons vertically; otherwise show a
+    // single blue confirmation button (same as '새로운 행 해제').
+    final List<Widget> dialogActions;
 
-    // Add a debug-only unlock button which bypasses the unlock requirement.
     if (kDebugMode) {
-      actions.add(
-        LearnHangulDialogAction(
-          label: '디버깅잠금해제',
-          onTap: () {
-            // Mark the consonant section unlocked for this session and open the
-            // consonant learning screen. This does not persist unlock status.
-            if (!mounted) return;
-            setState(() {
-              _consonantUnlocked = true;
-            });
-            _openConsonantScreen(context);
-          },
+      dialogActions = [
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CustomLiquidGlassDialogAction(
+              isConfirmationBlue: true,
+              onPressed: () => Navigator.pop(context),
+              child: const Text('확인'),
+            ),
+            const SizedBox(height: 12),
+            CustomLiquidGlassDialogAction(
+              onPressed: () {
+                // Mark unlocked for this session and open consonant screen.
+                if (!mounted) return;
+                setState(() {
+                  _consonantUnlocked = true;
+                });
+                Navigator.pop(context);
+                _openConsonantScreen(context);
+              },
+              child: const Text('디버깅잠금해제'),
+            ),
+          ],
         ),
-      );
+      ];
+    } else {
+      dialogActions = [
+        CustomLiquidGlassDialogAction(
+          isConfirmationBlue: true,
+          onPressed: () => Navigator.pop(context),
+          child: const Text('확인'),
+        ),
+      ];
     }
 
     showDialog(
       context: context,
-      builder: (_) => LearnHangulDialog(
-        title: '자음 학습 잠금',
-        message: '모음 네 행의 모든 글자를 각각 $kRowUnlockThreshold회 이상 맞히면 자음 학습이 열립니다.',
-        variant: LearnHangulDialogVariant.warning,
-        actions: actions,
+      barrierDismissible: true,
+      useRootNavigator: false,
+      barrierColor: Colors.black.withOpacity(0.3),
+      builder: (_) => Center(
+        child: CustomLiquidGlassDialog(
+          title: const Text('자음 학습 잠금'),
+          content: Text(
+            '모음 네 행의 모든 글자를 각각 $kRowUnlockThreshold회 이상 맞히면 자음 학습이 열립니다.',
+          ),
+          actions: dialogActions,
+        ),
       ),
     );
   }
@@ -112,7 +138,15 @@ class _LearnHangulHomePageState extends State<LearnHangulHomePage> {
       },
       {
         'label': '자음',
-        'leading': Text('ㄱ', style: TextStyle(fontSize: 24, color: iconColor)),
+        'leading': Text(
+          'ㄱ',
+          style: TextStyle(
+            fontSize: 24,
+            color: showConsonantLocked
+                ? palette.secondaryText.withOpacity(0.5)
+                : iconColor,
+          ),
+        ),
         'onPressed': () => _openConsonantScreen(context),
         'variant': LiquidGlassButtonVariant.secondary,
         'isLocked': showConsonantLocked,
