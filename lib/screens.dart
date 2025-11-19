@@ -86,6 +86,47 @@ const Map<String, String> _consonantSoundOverrides = {
   'ㅊ': '츠',
 };
 
+const Set<String> _batchimOnlyConsonants = {
+  'ㄳ',
+  'ㄵ',
+  'ㄶ',
+  'ㄺ',
+  'ㄻ',
+  'ㄼ',
+  'ㄽ',
+  'ㄾ',
+  'ㄿ',
+  'ㅀ',
+  'ㅄ',
+};
+
+const Map<String, List<String>> _batchimOnlyWordSymbolMap = {
+  'ㄳ': ['삯', '넋', '몫'],
+  'ㄵ': ['앉다', '앉는', '앉고'],
+  'ㄶ': ['않다', '않는', '많다'],
+  'ㄺ': ['닭', '읽다', '맑다'],
+  'ㄻ': ['삶다', '닮다', '옮다'],
+  'ㄼ': ['밟다', '밟는', '넓다', '넓은', '넓고', '짧다'],
+  'ㄽ': ['곬'],
+  'ㄾ': ['핥다', '핥는', '핥고', '훑다'],
+  'ㄿ': ['읊다', '읊는', '읊고'],
+  'ㅀ': ['앓다', '앓고', '앓는', '싫다', '싫어'],
+  'ㅄ': ['값', '값어치', '없다', '없어'],
+};
+
+final Map<String, HangulCharacter> _trainingWordBySymbol = {
+  for (final word in consonantTrainingWordPool) word.symbol: word,
+};
+
+final Map<String, List<HangulCharacter>> _batchimOnlyQuestionWords = {
+  for (final entry in _batchimOnlyWordSymbolMap.entries)
+    entry.key: [
+      for (final symbol in entry.value)
+        if (_trainingWordBySymbol.containsKey(symbol))
+          _trainingWordBySymbol[symbol]!,
+    ],
+};
+
 class VowelLearningScreen extends StatefulWidget {
   const VowelLearningScreen({super.key});
 
@@ -738,6 +779,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
   int _globalWrongCount = 0;
   TrainingMode? _currentMode;
   HangulCharacter? _currentQuestion;
+  String? _currentTrackingSymbol;
   List<String> _options = [];
   String? _selectedOption;
   bool _showResult = false;
@@ -878,9 +920,9 @@ class _TrainingScreenState extends State<TrainingScreen> {
   void _startNewQuestion() {
     final modes = _trainingModes;
     MapEntry<HangulCharacter, TrainingMode>? choice;
-    final dueRetry = _pullRetryQuestion();
-    if (dueRetry != null) {
-      choice = MapEntry(dueRetry.character, dueRetry.mode);
+    final retryInfo = _pullRetryQuestion();
+    if (retryInfo != null) {
+      choice = MapEntry(retryInfo.character, retryInfo.mode);
     }
 
     if (choice == null) {
@@ -1158,13 +1200,23 @@ class _TrainingScreenState extends State<TrainingScreen> {
         choice = selected;
       }
     }
-    _currentQuestion = choice.key;
+    final usedRetry = retryInfo != null;
     _currentMode = choice.value;
+    if (usedRetry) {
+      _currentQuestion = choice.key;
+      _currentTrackingSymbol = retryInfo!.trackingSymbol;
+    } else {
+      final batchimOverride = _pickBatchimOnlyWord(choice.key.symbol);
+      _currentQuestion = batchimOverride ?? choice.key;
+      _currentTrackingSymbol = batchimOverride != null
+          ? choice.key.symbol
+          : _currentQuestion!.symbol;
+    }
     _questionsServed++;
 
     // Save last chosen for consecutive-avoidance
     _lastMode = _currentMode;
-    _lastCharacterSymbol = _currentQuestion!.symbol;
+    _lastCharacterSymbol = _questionTrackingSymbol();
 
     // Generate options
     _options = _generateOptions();
@@ -1596,6 +1648,17 @@ class _TrainingScreenState extends State<TrainingScreen> {
     return false;
   }
 
+  HangulCharacter? _pickBatchimOnlyWord(String symbol) {
+    if (!_batchimOnlyConsonants.contains(symbol)) return null;
+    final words = _batchimOnlyQuestionWords[symbol];
+    if (words == null || words.isEmpty) return null;
+    return words[_rand.nextInt(words.length)];
+  }
+
+  String _questionTrackingSymbol() {
+    return _currentTrackingSymbol ?? (_currentQuestion?.symbol ?? '');
+  }
+
   // Hangul composition helpers for synthesizing syllables from an initial
   // consonant jamo and a medial vowel jamo. Used to generate practice
   // items like '가', '고', '나' from base consonants when needed.
@@ -1714,7 +1777,8 @@ class _TrainingScreenState extends State<TrainingScreen> {
       _isCorrect = isCorrect;
       if (isCorrect) {
         _totalCorrect++;
-        final sym = _currentQuestion!.symbol;
+        final questionSymbol = _currentQuestion!.symbol;
+        final trackingSymbol = _questionTrackingSymbol();
 
         // If the symbol is a synthesized sequence (e.g. '아이'),
         // we want to credit '아' and '이' individually.
@@ -1741,8 +1805,8 @@ class _TrainingScreenState extends State<TrainingScreen> {
           // We need to find which vowels make up this string.
           // Since all vowel names are 1 char (actually '아' is 1 char, '와' is 1 char),
           // we can just iterate characters.
-          for (var i = 0; i < sym.length; i++) {
-            final charStr = sym[i];
+          for (var i = 0; i < questionSymbol.length; i++) {
+            final charStr = questionSymbol[i];
             // Find the vowel with this name/symbol
             // Note: Vowel `symbol` is 'ㅏ', `name` is '아'.
             // The synthesized symbol uses `name` (e.g. '아').
@@ -1763,12 +1827,13 @@ class _TrainingScreenState extends State<TrainingScreen> {
             }
           }
         } else {
-          // Standard single character
-          _sessionCorrectCounts[sym] = (_sessionCorrectCounts[sym] ?? 0) + 1;
+          // Standard single character or consonant override
+          _sessionCorrectCounts[trackingSymbol] =
+              (_sessionCorrectCounts[trackingSymbol] ?? 0) + 1;
         }
 
         final key =
-            '${_currentQuestion!.symbol}|${_currentMode!.given.index}-${_currentMode!.choose.index}';
+            '$trackingSymbol|${_currentMode!.given.index}-${_currentMode!.choose.index}';
         _sessionCorrectPairs.add(key);
       } else {
         _globalWrongCount++;
@@ -1848,13 +1913,15 @@ class _TrainingScreenState extends State<TrainingScreen> {
     );
     if (exists) return;
 
-    final retryMode = _pickRetryMode(character, mode);
+    final trackingSymbol = _questionTrackingSymbol();
+    final retryMode = _pickRetryMode(character, mode, trackingSymbol);
     final availableAfter = _questionsServed + _minRetryGap;
     _retryQueue.add(
       _RetryQuestion(
         character: character,
         mode: retryMode,
         availableAfter: availableAfter,
+        trackingSymbol: trackingSymbol,
       ),
     );
   }
@@ -1862,6 +1929,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
   TrainingMode _pickRetryMode(
     HangulCharacter character,
     TrainingMode failedMode,
+    String trackingSymbol,
   ) {
     final modes = _trainingModes;
     final alternatives = modes
@@ -1873,7 +1941,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
         .toList();
     final unused = alternatives.where((mode) {
       final key =
-          '${character.symbol}|${mode.given.index}-${mode.choose.index}';
+          '$trackingSymbol|${mode.given.index}-${mode.choose.index}';
       return !_sessionCorrectPairs.contains(key);
     }).toList();
     final pool = unused.isNotEmpty
@@ -1910,6 +1978,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
       _sessionCorrectCounts.clear();
       _retryQueue.clear();
       _questionsServed = 0;
+      _currentTrackingSymbol = null;
       _startNewQuestion();
     });
   }
@@ -2241,9 +2310,11 @@ class _RetryQuestion {
     required this.character,
     required this.mode,
     required this.availableAfter,
+    required this.trackingSymbol,
   });
 
   final HangulCharacter character;
   final TrainingMode mode;
+  final String trackingSymbol;
   int availableAfter;
 }
