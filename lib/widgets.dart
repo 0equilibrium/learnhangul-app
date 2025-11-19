@@ -5,6 +5,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'design_system.dart';
 import 'models.dart';
 import 'utils.dart';
+import 'liquid_glass_buttons.dart';
 
 Future<void> showCharacterDetails(
   BuildContext context,
@@ -334,6 +335,8 @@ class _HangulCharacterTile extends StatelessWidget {
   /// 0 -> current surface color
   /// 7+ -> 100% blue (#2196F3)
   /// 1-6 -> proportional blend between surface and blue
+  /// Note: text color threshold is lowered to 5 elsewhere so text becomes
+  /// white starting at 5 corrects while background interpolation remains 7-step.
   Color _getBackgroundColor(Color surfaceColor, Color blueColor) {
     if (correctCount == 0) {
       return surfaceColor;
@@ -358,8 +361,9 @@ class _HangulCharacterTile extends StatelessWidget {
     );
 
     // 한글 문자와 로마자 표기는 항상 기본 색상 유지
-    final textColor = correctCount >= 7 ? Colors.white : palette.primaryText;
-    final captionColor = correctCount >= 7
+    // Make text white starting at 5 correct answers (visual tweak).
+    final textColor = correctCount >= 5 ? Colors.white : palette.primaryText;
+    final captionColor = correctCount >= 5
         ? Colors.white.withOpacity(0.8)
         : palette.mutedText;
 
@@ -492,6 +496,77 @@ class _CharacterDetailSheetState extends State<CharacterDetailSheet> {
     await _flutterTts.speak(widget.character.name);
   }
 
+  Future<void> _speakExampleRaw(String raw) async {
+    final trimmed = raw.trim();
+    final match = RegExp(r'^[^\s(]+').firstMatch(trimmed);
+    final term = match != null ? match.group(0)! : trimmed;
+    if (term.isEmpty) return;
+    await _flutterTts.speak(term);
+  }
+
+  Widget _buildExampleRichFromRaw(BuildContext context, String raw) {
+    final palette = LearnHangulTheme.paletteOf(context);
+    final typography = LearnHangulTheme.typographyOf(context);
+    final text = raw.trim();
+
+    // Try to split into base + (romanization, meaning)
+    final parenStart = text.indexOf('(');
+    String base = text;
+    String parenContent = '';
+    if (parenStart >= 0) {
+      base = text.substring(0, parenStart).trim();
+      final parenEnd = text.lastIndexOf(')');
+      if (parenEnd > parenStart) {
+        parenContent = text.substring(parenStart + 1, parenEnd).trim();
+      } else {
+        parenContent = text.substring(parenStart + 1).trim();
+      }
+    }
+
+    if (parenContent.isEmpty) {
+      return Text(text, style: typography.body);
+    }
+
+    // Split paren content by first comma: romanization, meaning
+    final parts = parenContent.split(',');
+    final romanization = parts.isNotEmpty ? parts[0].trim() : '';
+    final meaning = parts.length > 1 ? parts.sublist(1).join(',').trim() : '';
+
+    final List<TextSpan> spans = [];
+    if (base.isNotEmpty) {
+      spans.add(
+        TextSpan(
+          text: base + ' ',
+          style: typography.body.copyWith(color: palette.primaryText),
+        ),
+      );
+    }
+
+    // Put romanization outside parentheses, and meaning inside parentheses
+    if (romanization.isNotEmpty) {
+      spans.add(
+        TextSpan(
+          text: romanization + ' ',
+          style: typography.body.copyWith(color: palette.warning),
+        ),
+      );
+    }
+
+    if (meaning.isNotEmpty) {
+      spans.add(
+        TextSpan(
+          text: '(' + meaning + ')',
+          style: typography.body.copyWith(color: palette.primaryText),
+        ),
+      );
+    }
+
+    return RichText(
+      text: TextSpan(children: spans),
+      textScaleFactor: MediaQuery.textScaleFactorOf(context),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = LearnHangulTheme.paletteOf(context);
@@ -520,25 +595,13 @@ class _CharacterDetailSheetState extends State<CharacterDetailSheet> {
           ),
         ],
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: Stack(
         children: [
-          const SizedBox(height: 12),
-          Container(
-            width: 36,
-            height: 5,
-            decoration: BoxDecoration(
-              color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.3)
-                  : Colors.black.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(2.5),
-            ),
-          ),
           Padding(
             padding: EdgeInsets.only(
               left: 24,
               right: 24,
-              top: 24,
+              top: 32,
               bottom: 24 + MediaQuery.of(context).viewPadding.bottom,
             ),
             child: SingleChildScrollView(
@@ -568,11 +631,12 @@ class _CharacterDetailSheetState extends State<CharacterDetailSheet> {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Text(
-                        'Romanization • ${widget.character.romanization}',
-                        style: typography.body.copyWith(color: palette.info),
+                      Expanded(
+                        child: Text(
+                          widget.character.romanization,
+                          style: typography.body.copyWith(color: palette.info),
+                        ),
                       ),
-                      const SizedBox(width: 8),
                       IconButton(
                         icon: Icon(
                           Icons.volume_up_rounded,
@@ -584,55 +648,84 @@ class _CharacterDetailSheetState extends State<CharacterDetailSheet> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _InfoRow(
-                    icon: Icons.volume_up_outlined,
-                    label: '예시 단어',
-                    value: widget.character.example,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '예시 단어',
+                        style: typography.caption.copyWith(
+                          fontSize: 14.0,
+                          color: palette.mutedText,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildExampleRichFromRaw(
+                                  context,
+                                  widget.character.example,
+                                ),
+                                if (widget.character.secondExample != null) ...[
+                                  const SizedBox(height: 8),
+                                  _buildExampleRichFromRaw(
+                                    context,
+                                    widget.character.secondExample!,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          Column(
+                            children: [
+                              IconButton(
+                                icon: Icon(
+                                  Icons.volume_up_rounded,
+                                  color: palette.info,
+                                ),
+                                onPressed: () =>
+                                    _speakExampleRaw(widget.character.example),
+                                tooltip: '예시 단어 발음 듣기',
+                              ),
+                              if (widget.character.secondExample != null)
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.volume_up_rounded,
+                                    color: palette.info,
+                                  ),
+                                  onPressed: () => _speakExampleRaw(
+                                    widget.character.secondExample!,
+                                  ),
+                                  tooltip: '예시 단어 발음 듣기',
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
+
+          // Top-right close button (liquid style)
+          Positioned(
+            top: 12,
+            right: 12,
+            child: LiquidGlassButtons.circularIconButton(
+              context,
+              icon: Icons.close,
+              onPressed: () => Navigator.pop(context),
+              size: 44.0,
+            ),
+          ),
         ],
       ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = LearnHangulTheme.paletteOf(context);
-    final typography = LearnHangulTheme.typographyOf(context);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: palette.info),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: typography.caption.copyWith(color: palette.mutedText),
-              ),
-              const SizedBox(height: 4),
-              Text(value, style: typography.body),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

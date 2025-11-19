@@ -788,11 +788,13 @@ class LearnHangulAppBar extends StatelessWidget implements PreferredSizeWidget {
     super.key,
     this.showLeading = true,
     this.trailing,
+    this.backgroundColor,
   });
 
   final String title;
   final bool showLeading;
   final Widget? trailing;
+  final Color? backgroundColor;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -809,7 +811,7 @@ class LearnHangulAppBar extends StatelessWidget implements PreferredSizeWidget {
       toolbarHeight: 77,
       leadingWidth: 77,
       centerTitle: true,
-      backgroundColor: palette.background,
+      backgroundColor: backgroundColor ?? palette.background,
       foregroundColor: palette.primaryText,
       elevation: 0,
       title: Text(title, style: typography.heading.copyWith(fontSize: 20)),
