@@ -160,18 +160,12 @@ class _CustomLiquidGlassDialogState extends State<CustomLiquidGlassDialog>
                       ),
                       child: widget.actions!.length == 1
                           ? widget.actions!.first
-                          : Row(
+                          : Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: widget.actions!.map((action) {
-                                final index = widget.actions!.indexOf(action);
-                                return Expanded(
-                                  child: Padding(
-                                    padding: EdgeInsets.only(
-                                      right: index < widget.actions!.length - 1
-                                          ? 8.0
-                                          : 0.0,
-                                    ),
-                                    child: action,
-                                  ),
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                  child: action,
                                 );
                               }).toList(),
                             ),

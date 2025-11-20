@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'premium_voice_dialog.dart';
 
 import 'design_system.dart';
 import 'models.dart';
@@ -483,7 +484,7 @@ class _CharacterDetailSheetState extends State<CharacterDetailSheet> {
   void initState() {
     super.initState();
     _flutterTts = FlutterTts();
-    _flutterTts.setLanguage('ko-KR');
+    _configureTts();
   }
 
   @override
@@ -492,8 +493,18 @@ class _CharacterDetailSheetState extends State<CharacterDetailSheet> {
     super.dispose();
   }
 
+  Future<void> _configureTts() async {
+    try {
+      await _flutterTts.setLanguage('ko-KR');
+    } catch (_) {}
+  }
+
   Future<void> _speakCharacter() async {
-    await _flutterTts.speak(widget.character.name);
+    try {
+      final ok = await showPremiumVoiceCheckDialog(context);
+      if (!ok) return;
+      await _flutterTts.speak(widget.character.name);
+    } catch (_) {}
   }
 
   Future<void> _speakExampleRaw(String raw) async {
@@ -501,7 +512,11 @@ class _CharacterDetailSheetState extends State<CharacterDetailSheet> {
     final match = RegExp(r'^[^\s(]+').firstMatch(trimmed);
     final term = match != null ? match.group(0)! : trimmed;
     if (term.isEmpty) return;
-    await _flutterTts.speak(term);
+    try {
+      final ok = await showPremiumVoiceCheckDialog(context);
+      if (!ok) return;
+      await _flutterTts.speak(term);
+    } catch (_) {}
   }
 
   Widget _buildExampleRichFromRaw(BuildContext context, String raw) {

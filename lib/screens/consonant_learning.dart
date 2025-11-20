@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../custom_list_widgets.dart';
 import '../custom_liquid_glass_dialog.dart';
 import '../design_system.dart';
 import '../liquid_glass_buttons.dart';
@@ -11,6 +9,7 @@ import '../widgets.dart';
 import '../utils.dart';
 import 'training.dart';
 import 'learned_words.dart';
+import '../premium_voice_dialog.dart';
 
 class ConsonantLearningScreen extends StatefulWidget {
   const ConsonantLearningScreen({super.key});
@@ -129,7 +128,9 @@ class _ConsonantLearningScreenState extends State<ConsonantLearningScreen> {
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
             child: LiquidGlassButton(
               label: '훈련하기',
-              onPressed: () {
+              onPressed: () async {
+                final ok = await showPremiumVoiceCheckDialog(context);
+                if (!ok) return;
                 Navigator.push(
                   context,
                   MaterialPageRoute(

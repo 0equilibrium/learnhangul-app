@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import '../premium_voice_dialog.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -11,7 +12,6 @@ import '../custom_liquid_glass_dialog.dart';
 import '../design_system.dart';
 import '../liquid_glass_buttons.dart';
 import '../models.dart';
-import '../widgets.dart';
 import '../utils.dart';
 import 'common.dart';
 
@@ -99,11 +99,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
   @override
   void initState() {
     super.initState();
-    _flutterTts.setLanguage('ko-KR');
-    _flutterTts.setSpeechRate(
-      (_isVowelTraining || _isConsonantTraining) ? 0.35 : 0.5,
-    );
-    _flutterTts.setPitch(1.0);
+    _configureTts();
     _loadCounts();
   }
 
@@ -111,6 +107,23 @@ class _TrainingScreenState extends State<TrainingScreen> {
   void dispose() {
     _flutterTts.stop();
     super.dispose();
+  }
+
+  Future<void> _configureTts() async {
+    final double rate = (_isVowelTraining || _isConsonantTraining) ? 0.35 : 0.5;
+    try {
+      await _flutterTts.setLanguage('ko-KR');
+    } catch (_) {}
+    try {
+      await _flutterTts.setSpeechRate(rate);
+    } catch (_) {
+      // ignore
+    }
+    try {
+      await _flutterTts.setPitch(1.0);
+    } catch (_) {
+      // ignore
+    }
   }
 
   Future<void> _loadCounts() async {
@@ -403,16 +416,16 @@ class _TrainingScreenState extends State<TrainingScreen> {
         choice = selected;
       }
     }
-    final usedRetry = retryInfo != null;
-    _currentMode = choice!.value;
-    if (usedRetry) {
-      _currentQuestion = choice.key;
-      _currentTrackingSymbol = retryInfo!.trackingSymbol;
+    final MapEntry<HangulCharacter, TrainingMode> selectedChoice = choice;
+    _currentMode = selectedChoice.value;
+    if (retryInfo case final retry?) {
+      _currentQuestion = selectedChoice.key;
+      _currentTrackingSymbol = retry.trackingSymbol;
     } else {
-      final batchimOverride = _pickBatchimOnlyWord(choice.key.symbol);
-      _currentQuestion = batchimOverride ?? choice.key;
+      final batchimOverride = _pickBatchimOnlyWord(selectedChoice.key.symbol);
+      _currentQuestion = batchimOverride ?? selectedChoice.key;
       _currentTrackingSymbol = batchimOverride != null
-          ? choice.key.symbol
+          ? selectedChoice.key.symbol
           : _currentQuestion!.symbol;
     }
     _questionsServed++;
@@ -801,8 +814,13 @@ class _TrainingScreenState extends State<TrainingScreen> {
   Future<void> _playSound(String symbol) async {
     final text = _getNameFromSymbol(symbol);
     try {
+      // Require premium Korean voice before speaking
+      final ok = await showPremiumVoiceCheckDialog(context);
+      if (!ok) return;
       await _flutterTts.speak(text);
-    } catch (_) {}
+    } catch (error) {
+      // ignore
+    }
   }
 
   void _onOptionSelected(String option) {

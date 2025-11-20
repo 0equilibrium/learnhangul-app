@@ -2,10 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import '../premium_voice_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../design_system.dart';
-import '../widgets.dart';
 import 'common.dart';
 
 class LearnedWordsScreen extends StatefulWidget {
@@ -24,9 +24,7 @@ class _LearnedWordsScreenState extends State<LearnedWordsScreen> {
   void initState() {
     super.initState();
     _loadWords();
-    _flutterTts.setLanguage('ko-KR');
-    _flutterTts.setSpeechRate(0.5);
-    _flutterTts.setPitch(1.0);
+    _configureTts();
   }
 
   @override
@@ -63,8 +61,24 @@ class _LearnedWordsScreenState extends State<LearnedWordsScreen> {
     }
   }
 
+  Future<void> _configureTts() async {
+    try {
+      await _flutterTts.setLanguage('ko-KR');
+    } catch (_) {}
+    try {
+      await _flutterTts.setSpeechRate(0.5);
+    } catch (_) {}
+    try {
+      await _flutterTts.setPitch(1.0);
+    } catch (_) {}
+  }
+
   Future<void> _speak(String text) async {
-    await _flutterTts.speak(text);
+    try {
+      final ok = await showPremiumVoiceCheckDialog(context);
+      if (!ok) return;
+      await _flutterTts.speak(text);
+    } catch (_) {}
   }
 
   @override
