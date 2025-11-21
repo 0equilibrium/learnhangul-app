@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'design_system.dart';
+import 'package:learnhangul/l10n/app_localizations.dart';
 import 'models.dart';
 import 'screens.dart';
 import 'custom_liquid_glass_dialog.dart';
@@ -77,7 +78,7 @@ class _LearnHangulHomePageState extends State<LearnHangulHomePage> {
             CustomLiquidGlassDialogAction(
               isConfirmationBlue: true,
               onPressed: () => Navigator.pop(context),
-              child: const Text('확인'),
+              child: Text(AppLocalizations.of(context)!.confirm),
             ),
             const SizedBox(height: 12),
             CustomLiquidGlassDialogAction(
@@ -90,7 +91,7 @@ class _LearnHangulHomePageState extends State<LearnHangulHomePage> {
                 Navigator.pop(context);
                 _openConsonantScreen(context);
               },
-              child: const Text('디버깅잠금해제'),
+              child: Text(AppLocalizations.of(context)!.debugUnlock),
             ),
           ],
         ),
@@ -100,7 +101,7 @@ class _LearnHangulHomePageState extends State<LearnHangulHomePage> {
         CustomLiquidGlassDialogAction(
           isConfirmationBlue: true,
           onPressed: () => Navigator.pop(context),
-          child: const Text('확인'),
+          child: Text(AppLocalizations.of(context)!.confirm),
         ),
       ];
     }
@@ -112,9 +113,11 @@ class _LearnHangulHomePageState extends State<LearnHangulHomePage> {
       barrierColor: Colors.black.withOpacity(0.3),
       builder: (_) => Center(
         child: CustomLiquidGlassDialog(
-          title: const Text('자음 학습 잠금'),
+          title: Text(AppLocalizations.of(context)!.consonantLockedTitle),
           content: Text(
-            '모음 네 행의 모든 글자를 각각 $kRowUnlockThreshold회 이상 맞히면 자음 학습이 열립니다.',
+            AppLocalizations.of(
+              context,
+            )!.consonantLockedContent(kRowUnlockThreshold),
           ),
           actions: dialogActions,
         ),
@@ -130,14 +133,14 @@ class _LearnHangulHomePageState extends State<LearnHangulHomePage> {
 
     final menuItems = [
       {
-        'label': '모음',
+        'label': AppLocalizations.of(context)!.vowels,
         'leading': Text('ㅏ', style: TextStyle(fontSize: 24, color: iconColor)),
         'onPressed': () => _openVowelScreen(context),
         'variant': LiquidGlassButtonVariant.primary,
         'isLocked': false,
       },
       {
-        'label': '자음',
+        'label': AppLocalizations.of(context)!.consonants,
         'leading': Text(
           'ㄱ',
           style: TextStyle(
@@ -155,7 +158,7 @@ class _LearnHangulHomePageState extends State<LearnHangulHomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('LearnHangul'),
+        title: Text(AppLocalizations.of(context)!.learnHangul),
         scrolledUnderElevation: 0,
       ),
       body: Column(
@@ -193,7 +196,7 @@ class _LearnHangulHomePageState extends State<LearnHangulHomePage> {
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
             child: LiquidGlassButton(
-              label: '학습 환경 설정',
+              label: AppLocalizations.of(context)!.settings,
               leading: Icon(CupertinoIcons.gear_solid, color: iconColor),
               trailing: Icon(CupertinoIcons.chevron_right, color: iconColor),
               onPressed: () {

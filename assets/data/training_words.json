@@ -1,0 +1,998 @@
+{
+  "openSyllable": [
+    {
+      "symbol": "소",
+      "name": "소",
+      "romanization": "so",
+      "example": "",
+      "secondExample": null,
+      "meaning": "cow"
+    },
+    {
+      "symbol": "나",
+      "name": "나",
+      "romanization": "na",
+      "example": "",
+      "secondExample": null,
+      "meaning": "me"
+    },
+    {
+      "symbol": "자",
+      "name": "자",
+      "romanization": "ja",
+      "example": "",
+      "secondExample": null,
+      "meaning": "sleep"
+    },
+    {
+      "symbol": "무",
+      "name": "무",
+      "romanization": "mu",
+      "example": "",
+      "secondExample": null,
+      "meaning": "radish"
+    },
+    {
+      "symbol": "가",
+      "name": "가",
+      "romanization": "ga",
+      "example": "",
+      "secondExample": null,
+      "meaning": "song"
+    },
+    {
+      "symbol": "도",
+      "name": "도",
+      "romanization": "do",
+      "example": "",
+      "secondExample": null,
+      "meaning": "island"
+    },
+    {
+      "symbol": "라",
+      "name": "라",
+      "romanization": "ra",
+      "example": "",
+      "secondExample": null,
+      "meaning": "note"
+    },
+    {
+      "symbol": "나비",
+      "name": "나비",
+      "romanization": "na-bi",
+      "example": "",
+      "secondExample": null,
+      "meaning": "butterfly"
+    },
+    {
+      "symbol": "아기",
+      "name": "아기",
+      "romanization": "a-gi",
+      "example": "",
+      "secondExample": null,
+      "meaning": "baby"
+    },
+    {
+      "symbol": "사과",
+      "name": "사과",
+      "romanization": "sa-gwa",
+      "example": "",
+      "secondExample": null,
+      "meaning": "apple"
+    },
+    {
+      "symbol": "고기",
+      "name": "고기",
+      "romanization": "go-gi",
+      "example": "",
+      "secondExample": null,
+      "meaning": "meat"
+    },
+    {
+      "symbol": "개나리",
+      "name": "개나리",
+      "romanization": "gae-na-ri",
+      "example": "",
+      "secondExample": null,
+      "meaning": "forsythia"
+    },
+    {
+      "symbol": "우유",
+      "name": "우유",
+      "romanization": "u-yu",
+      "example": "",
+      "secondExample": null,
+      "meaning": "milk"
+    },
+    {
+      "symbol": "바나나",
+      "name": "바나나",
+      "romanization": "ba-na-na",
+      "example": "",
+      "secondExample": null,
+      "meaning": "banana"
+    },
+    {
+      "symbol": "나라",
+      "name": "나라",
+      "romanization": "na-ra",
+      "example": "",
+      "secondExample": null,
+      "meaning": "country"
+    },
+    {
+      "symbol": "바다",
+      "name": "바다",
+      "romanization": "ba-da",
+      "example": "",
+      "secondExample": null,
+      "meaning": "sea"
+    },
+    {
+      "symbol": "도시",
+      "name": "도시",
+      "romanization": "do-si",
+      "example": "",
+      "secondExample": null,
+      "meaning": "city"
+    },
+    {
+      "symbol": "라디오",
+      "name": "라디오",
+      "romanization": "ra-di-o",
+      "example": "",
+      "secondExample": null,
+      "meaning": "radio"
+    },
+    {
+      "symbol": "모자",
+      "name": "모자",
+      "romanization": "mo-ja",
+      "example": "",
+      "secondExample": null,
+      "meaning": "hat"
+    },
+    {
+      "symbol": "지도",
+      "name": "지도",
+      "romanization": "ji-do",
+      "example": "",
+      "secondExample": null,
+      "meaning": "map"
+    },
+    {
+      "symbol": "나무",
+      "name": "나무",
+      "romanization": "na-mu",
+      "example": "",
+      "secondExample": null,
+      "meaning": "tree"
+    },
+    {
+      "symbol": "오이",
+      "name": "오이",
+      "romanization": "o-i",
+      "example": "",
+      "secondExample": null,
+      "meaning": "cucumber"
+    },
+    {
+      "symbol": "이유",
+      "name": "이유",
+      "romanization": "i-yu",
+      "example": "",
+      "secondExample": null,
+      "meaning": "reason"
+    },
+    {
+      "symbol": "고구마",
+      "name": "고구마",
+      "romanization": "go-gu-ma",
+      "example": "",
+      "secondExample": null,
+      "meaning": "sweet potato"
+    },
+    {
+      "symbol": "토마토",
+      "name": "토마토",
+      "romanization": "to-ma-to",
+      "example": "",
+      "secondExample": null,
+      "meaning": "tomato"
+    },
+    {
+      "symbol": "우주",
+      "name": "우주",
+      "romanization": "u-ju",
+      "example": "",
+      "secondExample": null,
+      "meaning": "universe"
+    },
+    {
+      "symbol": "오로라",
+      "name": "오로라",
+      "romanization": "o-ro-ra",
+      "example": "",
+      "secondExample": null,
+      "meaning": "aurora"
+    },
+    {
+      "symbol": "카카오",
+      "name": "카카오",
+      "romanization": "ka-ka-o",
+      "example": "",
+      "secondExample": null,
+      "meaning": "cacao"
+    },
+    {
+      "symbol": "오리",
+      "name": "오리",
+      "romanization": "o-ri",
+      "example": "",
+      "secondExample": null,
+      "meaning": "duck"
+    },
+    {
+      "symbol": "여우",
+      "name": "여우",
+      "romanization": "yeo-u",
+      "example": "",
+      "secondExample": null,
+      "meaning": "fox"
+    },
+    {
+      "symbol": "호수",
+      "name": "호수",
+      "romanization": "ho-su",
+      "example": "",
+      "secondExample": null,
+      "meaning": "lake"
+    },
+    {
+      "symbol": "비누",
+      "name": "비누",
+      "romanization": "bi-nu",
+      "example": "",
+      "secondExample": null,
+      "meaning": "soap"
+    },
+    {
+      "symbol": "피아노",
+      "name": "피아노",
+      "romanization": "pi-a-no",
+      "example": "",
+      "secondExample": null,
+      "meaning": "piano"
+    },
+    {
+      "symbol": "노래",
+      "name": "노래",
+      "romanization": "no-rae",
+      "example": "",
+      "secondExample": null,
+      "meaning": "song"
+    },
+    {
+      "symbol": "기차",
+      "name": "기차",
+      "romanization": "gi-cha",
+      "example": "",
+      "secondExample": null,
+      "meaning": "train"
+    },
+    {
+      "symbol": "코끼리",
+      "name": "코끼리",
+      "romanization": "ko-kki-ri",
+      "example": "",
+      "secondExample": null,
+      "meaning": "elephant"
+    },
+    {
+      "symbol": "바구니",
+      "name": "바구니",
+      "romanization": "ba-gu-ni",
+      "example": "",
+      "secondExample": null,
+      "meaning": "basket"
+    },
+    {
+      "symbol": "시계",
+      "name": "시계",
+      "romanization": "si-gye",
+      "example": "",
+      "secondExample": null,
+      "meaning": "clock"
+    },
+    {
+      "symbol": "오토바이",
+      "name": "오토바이",
+      "romanization": "o-to-ba-i",
+      "example": "",
+      "secondExample": null,
+      "meaning": "motorcycle"
+    },
+    {
+      "symbol": "하마",
+      "name": "하마",
+      "romanization": "ha-ma",
+      "example": "",
+      "secondExample": null,
+      "meaning": "hippopotamus"
+    },
+    {
+      "symbol": "유리",
+      "name": "유리",
+      "romanization": "yu-ri",
+      "example": "",
+      "secondExample": null,
+      "meaning": "glass"
+    },
+    {
+      "symbol": "아이",
+      "name": "아이",
+      "romanization": "a-i",
+      "example": "",
+      "secondExample": null,
+      "meaning": "child"
+    }
+  ],
+  "batchim": [
+    {
+      "symbol": "꽃",
+      "name": "꽃",
+      "romanization": "kkot",
+      "example": "",
+      "secondExample": null,
+      "meaning": "flower"
+    },
+    {
+      "symbol": "밥",
+      "name": "밥",
+      "romanization": "bap",
+      "example": "",
+      "secondExample": null,
+      "meaning": "rice"
+    },
+    {
+      "symbol": "별",
+      "name": "별",
+      "romanization": "byeol",
+      "example": "",
+      "secondExample": null,
+      "meaning": "star"
+    },
+    {
+      "symbol": "손",
+      "name": "손",
+      "romanization": "son",
+      "example": "",
+      "secondExample": null,
+      "meaning": "hand"
+    },
+    {
+      "symbol": "문",
+      "name": "문",
+      "romanization": "mun",
+      "example": "",
+      "secondExample": null,
+      "meaning": "door"
+    },
+    {
+      "symbol": "눈",
+      "name": "눈",
+      "romanization": "nun",
+      "example": "",
+      "secondExample": null,
+      "meaning": "snow"
+    },
+    {
+      "symbol": "빛",
+      "name": "빛",
+      "romanization": "bit",
+      "example": "",
+      "secondExample": null,
+      "meaning": "light"
+    },
+    {
+      "symbol": "및",
+      "name": "및",
+      "romanization": "mit",
+      "example": "",
+      "secondExample": null,
+      "meaning": "and"
+    },
+    {
+      "symbol": "하늘",
+      "name": "하늘",
+      "romanization": "ha-neul",
+      "example": "",
+      "secondExample": null,
+      "meaning": "sky"
+    },
+    {
+      "symbol": "사랑",
+      "name": "사랑",
+      "romanization": "sa-rang",
+      "example": "",
+      "secondExample": null,
+      "meaning": "love"
+    },
+    {
+      "symbol": "오징어",
+      "name": "오징어",
+      "romanization": "o-jing-eo",
+      "example": "",
+      "secondExample": null,
+      "meaning": "squid"
+    },
+    {
+      "symbol": "강아지",
+      "name": "강아지",
+      "romanization": "gang-a-ji",
+      "example": "",
+      "secondExample": null,
+      "meaning": "puppy"
+    },
+    {
+      "symbol": "고양이",
+      "name": "고양이",
+      "romanization": "go-yang-i",
+      "example": "",
+      "secondExample": null,
+      "meaning": "cat"
+    },
+    {
+      "symbol": "물고기",
+      "name": "물고기",
+      "romanization": "mul-go-gi",
+      "example": "",
+      "secondExample": null,
+      "meaning": "fish"
+    },
+    {
+      "symbol": "책상",
+      "name": "책상",
+      "romanization": "chaek-sang",
+      "example": "",
+      "secondExample": null,
+      "meaning": "desk"
+    },
+    {
+      "symbol": "가방",
+      "name": "가방",
+      "romanization": "ga-bang",
+      "example": "",
+      "secondExample": null,
+      "meaning": "bag"
+    },
+    {
+      "symbol": "엄마",
+      "name": "엄마",
+      "romanization": "eom-ma",
+      "example": "",
+      "secondExample": null,
+      "meaning": "mom"
+    },
+    {
+      "symbol": "아침",
+      "name": "아침",
+      "romanization": "a-chim",
+      "example": "",
+      "secondExample": null,
+      "meaning": "morning"
+    },
+    {
+      "symbol": "친구",
+      "name": "친구",
+      "romanization": "chin-gu",
+      "example": "",
+      "secondExample": null,
+      "meaning": "friend"
+    },
+    {
+      "symbol": "별빛",
+      "name": "별빛",
+      "romanization": "byeol-bit",
+      "example": "",
+      "secondExample": null,
+      "meaning": "starlight"
+    },
+    {
+      "symbol": "숲길",
+      "name": "숲길",
+      "romanization": "sup-gil",
+      "example": "",
+      "secondExample": null,
+      "meaning": "forest path"
+    },
+    {
+      "symbol": "바람",
+      "name": "바람",
+      "romanization": "ba-ram",
+      "example": "",
+      "secondExample": null,
+      "meaning": "wind"
+    },
+    {
+      "symbol": "햇빛",
+      "name": "햇빛",
+      "romanization": "haet-bit",
+      "example": "",
+      "secondExample": null,
+      "meaning": "sunlight"
+    },
+    {
+      "symbol": "집",
+      "name": "집",
+      "romanization": "jip",
+      "example": "",
+      "secondExample": null,
+      "meaning": "house"
+    },
+    {
+      "symbol": "공책",
+      "name": "공책",
+      "romanization": "gong-chaek",
+      "example": "",
+      "secondExample": null,
+      "meaning": "notebook"
+    },
+    {
+      "symbol": "물컵",
+      "name": "물컵",
+      "romanization": "mul-keop",
+      "example": "",
+      "secondExample": null,
+      "meaning": "cup"
+    },
+    {
+      "symbol": "고등어",
+      "name": "고등어",
+      "romanization": "go-deung-eo",
+      "example": "",
+      "secondExample": null,
+      "meaning": "mackerel"
+    },
+    {
+      "symbol": "눈썹",
+      "name": "눈썹",
+      "romanization": "nun-sseop",
+      "example": "",
+      "secondExample": null,
+      "meaning": "eyebrow"
+    },
+    {
+      "symbol": "감자탕",
+      "name": "감자탕",
+      "romanization": "gam-ja-tang",
+      "example": "",
+      "secondExample": null,
+      "meaning": "spicy pork stew"
+    },
+    {
+      "symbol": "산책길",
+      "name": "산책길",
+      "romanization": "san-chaek-gil",
+      "example": "",
+      "secondExample": null,
+      "meaning": "walking path"
+    },
+    {
+      "symbol": "닭",
+      "name": "닭",
+      "romanization": "dalg",
+      "example": "",
+      "secondExample": null,
+      "meaning": "chicken"
+    },
+    {
+      "symbol": "값",
+      "name": "값",
+      "romanization": "gap",
+      "example": "",
+      "secondExample": null,
+      "meaning": "price"
+    },
+    {
+      "symbol": "삯",
+      "name": "삯",
+      "romanization": "sak",
+      "example": "",
+      "secondExample": null,
+      "meaning": "wage"
+    },
+    {
+      "symbol": "넋",
+      "name": "넋",
+      "romanization": "neok",
+      "example": "",
+      "secondExample": null,
+      "meaning": "soul"
+    },
+    {
+      "symbol": "몫",
+      "name": "몫",
+      "romanization": "mok",
+      "example": "",
+      "secondExample": null,
+      "meaning": "share"
+    },
+    {
+      "symbol": "앉다",
+      "name": "앉다",
+      "romanization": "an-tta",
+      "example": "",
+      "secondExample": null,
+      "meaning": "to sit"
+    },
+    {
+      "symbol": "앉는",
+      "name": "앉는",
+      "romanization": "an-neun",
+      "example": "",
+      "secondExample": null,
+      "meaning": "sitting (modifier)"
+    },
+    {
+      "symbol": "앉고",
+      "name": "앉고",
+      "romanization": "an-kko",
+      "example": "",
+      "secondExample": null,
+      "meaning": "sit and"
+    },
+    {
+      "symbol": "삶다",
+      "name": "삶다",
+      "romanization": "salm-da",
+      "example": "",
+      "secondExample": null,
+      "meaning": "to boil"
+    },
+    {
+      "symbol": "닮다",
+      "name": "닮다",
+      "romanization": "dalm-da",
+      "example": "",
+      "secondExample": null,
+      "meaning": "to resemble"
+    },
+    {
+      "symbol": "옮다",
+      "name": "옮다",
+      "romanization": "olm-da",
+      "example": "",
+      "secondExample": null,
+      "meaning": "to transfer"
+    },
+    {
+      "symbol": "앓고",
+      "name": "앓고",
+      "romanization": "al-ko",
+      "example": "",
+      "secondExample": null,
+      "meaning": "while aching"
+    },
+    {
+      "symbol": "앓는",
+      "name": "앓는",
+      "romanization": "al-neun",
+      "example": "",
+      "secondExample": null,
+      "meaning": "aching (modifier)"
+    },
+    {
+      "symbol": "앓다",
+      "name": "앓다",
+      "romanization": "al-ta",
+      "example": "",
+      "secondExample": null,
+      "meaning": "to suffer (illness)"
+    },
+    {
+      "symbol": "싫다",
+      "name": "싫다",
+      "romanization": "sil-ta",
+      "example": "",
+      "secondExample": null,
+      "meaning": "to dislike"
+    },
+    {
+      "symbol": "싫어",
+      "name": "싫어",
+      "romanization": "sil-eo",
+      "example": "",
+      "secondExample": null,
+      "meaning": "I dislike"
+    },
+    {
+      "symbol": "값어치",
+      "name": "값어치",
+      "romanization": "gap-eo-chi",
+      "example": "",
+      "secondExample": null,
+      "meaning": "value"
+    },
+    {
+      "symbol": "밟다",
+      "name": "밟다",
+      "romanization": "balp-tta",
+      "example": "",
+      "secondExample": null,
+      "meaning": "to step on"
+    },
+    {
+      "symbol": "밟는",
+      "name": "밟는",
+      "romanization": "balm-neun",
+      "example": "",
+      "secondExample": null,
+      "meaning": "stepping on (modifier)"
+    },
+    {
+      "symbol": "핥다",
+      "name": "핥다",
+      "romanization": "halt-da",
+      "example": "",
+      "secondExample": null,
+      "meaning": "to lick"
+    },
+    {
+      "symbol": "핥는",
+      "name": "핥는",
+      "romanization": "hal-neun",
+      "example": "",
+      "secondExample": null,
+      "meaning": "licking (modifier)"
+    },
+    {
+      "symbol": "핥고",
+      "name": "핥고",
+      "romanization": "hal-kko",
+      "example": "",
+      "secondExample": null,
+      "meaning": "and lick"
+    },
+    {
+      "symbol": "넓다",
+      "name": "넓다",
+      "romanization": "neolb-da",
+      "example": "",
+      "secondExample": null,
+      "meaning": "to be wide"
+    },
+    {
+      "symbol": "넓은",
+      "name": "넓은",
+      "romanization": "neol-beun",
+      "example": "",
+      "secondExample": null,
+      "meaning": "wide (modifier)"
+    },
+    {
+      "symbol": "넓고",
+      "name": "넓고",
+      "romanization": "neol-go",
+      "example": "",
+      "secondExample": null,
+      "meaning": "wide and"
+    },
+    {
+      "symbol": "짧다",
+      "name": "짧다",
+      "romanization": "jjalb-da",
+      "example": "",
+      "secondExample": null,
+      "meaning": "to be short"
+    },
+    {
+      "symbol": "곬",
+      "name": "곬",
+      "romanization": "gol",
+      "example": "",
+      "secondExample": null,
+      "meaning": "passage"
+    },
+    {
+      "symbol": "훑다",
+      "name": "훑다",
+      "romanization": "hult-da",
+      "example": "",
+      "secondExample": null,
+      "meaning": "to scan"
+    },
+    {
+      "symbol": "읊다",
+      "name": "읊다",
+      "romanization": "eulp-da",
+      "example": "",
+      "secondExample": null,
+      "meaning": "to recite"
+    },
+    {
+      "symbol": "읊는",
+      "name": "읊는",
+      "romanization": "eulm-neun",
+      "example": "",
+      "secondExample": null,
+      "meaning": "reciting (modifier)"
+    },
+    {
+      "symbol": "읊고",
+      "name": "읊고",
+      "romanization": "eulk-ko",
+      "example": "",
+      "secondExample": null,
+      "meaning": "recite and"
+    },
+    {
+      "symbol": "않다",
+      "name": "않다",
+      "romanization": "anh-da",
+      "example": "",
+      "secondExample": null,
+      "meaning": "to not do"
+    },
+    {
+      "symbol": "않는",
+      "name": "않는",
+      "romanization": "anh-neun",
+      "example": "",
+      "secondExample": null,
+      "meaning": "not doing (modifier)"
+    },
+    {
+      "symbol": "많다",
+      "name": "많다",
+      "romanization": "man-ta",
+      "example": "",
+      "secondExample": null,
+      "meaning": "to be many"
+    },
+    {
+      "symbol": "읽다",
+      "name": "읽다",
+      "romanization": "ilg-da",
+      "example": "",
+      "secondExample": null,
+      "meaning": "to read"
+    },
+    {
+      "symbol": "맑다",
+      "name": "맑다",
+      "romanization": "malg-da",
+      "example": "",
+      "secondExample": null,
+      "meaning": "to be clear"
+    },
+    {
+      "symbol": "없다",
+      "name": "없다",
+      "romanization": "eop-da",
+      "example": "",
+      "secondExample": null,
+      "meaning": "to not exist"
+    },
+    {
+      "symbol": "없어",
+      "name": "없어",
+      "romanization": "eop-seo",
+      "example": "",
+      "secondExample": null,
+      "meaning": "there is none"
+    },
+    {
+      "symbol": "선물",
+      "name": "선물",
+      "romanization": "seon-mul",
+      "example": "",
+      "secondExample": null,
+      "meaning": "gift"
+    },
+    {
+      "symbol": "단풍",
+      "name": "단풍",
+      "romanization": "dan-pung",
+      "example": "",
+      "secondExample": null,
+      "meaning": "autumn leaves"
+    },
+    {
+      "symbol": "골목",
+      "name": "골목",
+      "romanization": "gol-mok",
+      "example": "",
+      "secondExample": null,
+      "meaning": "alley"
+    },
+    {
+      "symbol": "공항",
+      "name": "공항",
+      "romanization": "gong-hang",
+      "example": "",
+      "secondExample": null,
+      "meaning": "airport"
+    },
+    {
+      "symbol": "밤길",
+      "name": "밤길",
+      "romanization": "bam-gil",
+      "example": "",
+      "secondExample": null,
+      "meaning": "night path"
+    },
+    {
+      "symbol": "손톱",
+      "name": "손톱",
+      "romanization": "son-top",
+      "example": "",
+      "secondExample": null,
+      "meaning": "fingernail"
+    },
+    {
+      "symbol": "잔디밭",
+      "name": "잔디밭",
+      "romanization": "jan-di-bat",
+      "example": "",
+      "secondExample": null,
+      "meaning": "lawn"
+    },
+    {
+      "symbol": "흙길",
+      "name": "흙길",
+      "romanization": "heuk-gil",
+      "example": "",
+      "secondExample": null,
+      "meaning": "dirt road"
+    },
+    {
+      "symbol": "문장",
+      "name": "문장",
+      "romanization": "mun-jang",
+      "example": "",
+      "secondExample": null,
+      "meaning": "sentence"
+    },
+    {
+      "symbol": "강변",
+      "name": "강변",
+      "romanization": "gang-byeon",
+      "example": "",
+      "secondExample": null,
+      "meaning": "riverside"
+    },
+    {
+      "symbol": "꽃밭",
+      "name": "꽃밭",
+      "romanization": "kkot-bat",
+      "example": "",
+      "secondExample": null,
+      "meaning": "flower field"
+    },
+    {
+      "symbol": "눈밭",
+      "name": "눈밭",
+      "romanization": "nun-bat",
+      "example": "",
+      "secondExample": null,
+      "meaning": "snowfield"
+    },
+    {
+      "symbol": "별장",
+      "name": "별장",
+      "romanization": "byeol-jang",
+      "example": "",
+      "secondExample": null,
+      "meaning": "vacation house"
+    },
+    {
+      "symbol": "공원",
+      "name": "공원",
+      "romanization": "gong-won",
+      "example": "",
+      "secondExample": null,
+      "meaning": "park"
+    }
+  ]
+}

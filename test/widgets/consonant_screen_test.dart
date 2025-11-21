@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:learnhangul/screens.dart';
 import 'package:learnhangul/design_system.dart';
+import 'package:learnhangul/l10n/app_localizations.dart';
+import 'package:learnhangul/screens.dart';
 
 void main() {
   testWidgets('ConsonantLearningScreen hides section titles', (tester) async {
@@ -12,6 +13,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: LearnHangulTheme.light(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: const ConsonantLearningScreen(),
       ),
     );

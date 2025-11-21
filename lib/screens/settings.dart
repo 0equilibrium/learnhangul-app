@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:learnhangul/l10n/app_localizations.dart';
 
 import '../custom_list_widgets.dart';
 import '../custom_liquid_glass_dialog.dart';
@@ -21,7 +22,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _reminderEnabled = value);
     LearnHangulSnackbar.show(
       context,
-      message: value ? '매일 저녁 알림을 켰어요.' : '알림을 잠시 쉬고 있어요.',
+      message: value
+          ? AppLocalizations.of(context)!.reminderOnMessage
+          : AppLocalizations.of(context)!.reminderOffMessage,
       tone: value ? LearnHangulSnackTone.success : LearnHangulSnackTone.warning,
     );
   }
@@ -38,12 +41,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       barrierColor: Colors.black.withOpacity(0.3),
       builder: (_) => Center(
         child: CustomLiquidGlassDialog(
-          title: const Text('학습 데이터 초기화'),
-          content: const Text('맞힌 기록과 음절 진행도가 모두 삭제됩니다. 계속할까요?'),
+          title: Text(AppLocalizations.of(context)!.resetProgress),
+          content: Text(AppLocalizations.of(context)!.dataResetConfirm),
           actions: [
             CustomLiquidGlassDialogAction(
               onPressed: () => Navigator.pop(context),
-              child: const Text('취소'),
+              child: Text(AppLocalizations.of(context)!.cancel),
             ),
             CustomLiquidGlassDialogAction(
               isDestructiveAction: true,
@@ -51,11 +54,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Navigator.pop(context);
                 LearnHangulSnackbar.show(
                   context,
-                  message: '데이터를 초기화했어요.',
+                  message: AppLocalizations.of(context)!.dataResetDone,
                   tone: LearnHangulSnackTone.danger,
                 );
               },
-              child: const Text('초기화'),
+              child: Text(AppLocalizations.of(context)!.reset),
             ),
           ],
         ),
@@ -74,24 +77,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
 
     return Scaffold(
-      appBar: LearnHangulAppBar('설정', backgroundColor: sectionBg),
+      appBar: LearnHangulAppBar(
+        AppLocalizations.of(context)!.settings,
+        backgroundColor: sectionBg,
+      ),
       backgroundColor: sectionBg,
       body: SingleChildScrollView(
         child: Column(
           children: [
             const SizedBox(height: 6),
             CustomListSection.insetGrouped(
-              header: const Text('학습'),
+              header: Text(AppLocalizations.of(context)!.learning),
               children: [
                 CustomListTile(
                   backgroundColor: palette.surface,
                   title: Text(
-                    '저녁 리마인더',
+                    AppLocalizations.of(context)!.eveningReminder,
                     style: TextStyle(
                       color: isDarkMode ? Colors.white : Colors.black,
                     ),
                   ),
-                  subtitle: const Text('매일 19시에 학습 알림 받기'),
+                  subtitle: Text(
+                    AppLocalizations.of(context)!.eveningReminderSubtitle,
+                  ),
                   leading: const Icon(Icons.alarm_rounded),
                   trailing: Switch.adaptive(
                     value: _reminderEnabled,
@@ -102,12 +110,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 CustomListTile(
                   backgroundColor: palette.surface,
                   title: Text(
-                    'TTS 힌트',
+                    AppLocalizations.of(context)!.ttsHints,
                     style: TextStyle(
                       color: isDarkMode ? Colors.white : Colors.black,
                     ),
                   ),
-                  subtitle: const Text('문제를 풀 때 자동으로 음성 힌트 듣기'),
+                  subtitle: Text(
+                    AppLocalizations.of(context)!.ttsHintsSubtitle,
+                  ),
                   leading: const Icon(Icons.hearing_rounded),
                   trailing: Switch.adaptive(
                     value: _ttsHintsEnabled,
@@ -119,12 +129,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 6),
             CustomListSection.insetGrouped(
-              header: const Text('지원'),
+              header: Text(AppLocalizations.of(context)!.support),
               children: [
                 CustomListTile(
                   backgroundColor: palette.surface,
                   title: Text(
-                    '이용약관',
+                    AppLocalizations.of(context)!.terms,
                     style: TextStyle(
                       color: isDarkMode ? Colors.white : Colors.black,
                     ),
@@ -138,7 +148,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     else
                       LearnHangulSnackbar.show(
                         context,
-                        message: '링크를 열 수 없습니다.',
+                        message: AppLocalizations.of(context)!.linkOpenError,
                         tone: LearnHangulSnackTone.danger,
                       );
                   },
@@ -146,7 +156,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 CustomListTile(
                   backgroundColor: palette.surface,
                   title: Text(
-                    '도움말 센터',
+                    AppLocalizations.of(context)!.helpCenter,
                     style: TextStyle(
                       color: isDarkMode ? Colors.white : Colors.black,
                     ),
@@ -160,7 +170,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     else
                       LearnHangulSnackbar.show(
                         context,
-                        message: '링크를 열 수 없습니다.',
+                        message: AppLocalizations.of(context)!.linkOpenError,
                         tone: LearnHangulSnackTone.danger,
                       );
                   },
@@ -168,7 +178,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 CustomListTile(
                   backgroundColor: palette.surface,
                   title: Text(
-                    '문의하기',
+                    AppLocalizations.of(context)!.contactUs,
                     style: TextStyle(
                       color: isDarkMode ? Colors.white : Colors.black,
                     ),
@@ -185,7 +195,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     else
                       LearnHangulSnackbar.show(
                         context,
-                        message: '메일 앱을 열 수 없습니다.',
+                        message: AppLocalizations.of(context)!.mailAppError,
                         tone: LearnHangulSnackTone.danger,
                       );
                   },
@@ -194,17 +204,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 6),
             CustomListSection.insetGrouped(
-              header: const Text('계정'),
+              header: Text(AppLocalizations.of(context)!.learnHangul),
               children: [
                 CustomListTile(
                   backgroundColor: palette.surface,
                   title: Text(
-                    '진행 데이터 초기화',
+                    AppLocalizations.of(context)!.resetProgress,
                     style: TextStyle(
                       color: isDarkMode ? Colors.red[300] : Colors.red,
                     ),
                   ),
-                  subtitle: const Text('맞힌 수와 섹션 잠금 해제를 모두 삭제합니다'),
+                  subtitle: Text(
+                    AppLocalizations.of(context)!.resetProgressSubtitle,
+                  ),
                   leading: Icon(
                     Icons.delete_sweep_rounded,
                     color: isDarkMode ? Colors.red[300] : Colors.red,

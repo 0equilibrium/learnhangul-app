@@ -3,69 +3,6 @@ import '../models.dart';
 // Preferences key for learned words (public so multiple screens can use it)
 const String learnedWordsPrefsKey = 'learned_words_v1';
 
-const Map<String, String> consonantSoundOverrides = {
-  'ㄱ': '그',
-  'ㄲ': '끄',
-  'ㅋ': '크',
-  'ㄴ': '느',
-  'ㄷ': '드',
-  'ㄸ': '뜨',
-  'ㅌ': '트',
-  'ㄹ': '르',
-  'ㅁ': '므',
-  'ㅂ': '브',
-  'ㅃ': '쁘',
-  'ㅍ': '프',
-  'ㅅ': '스',
-  'ㅆ': '쓰',
-  'ㅎ': '흐',
-  'ㅇ': '으',
-  'ㅈ': '즈',
-  'ㅉ': '쯔',
-  'ㅊ': '츠',
-};
-
-const Set<String> batchimOnlyConsonants = {
-  'ㄳ',
-  'ㄵ',
-  'ㄶ',
-  'ㄺ',
-  'ㄻ',
-  'ㄼ',
-  'ㄽ',
-  'ㄾ',
-  'ㄿ',
-  'ㅀ',
-  'ㅄ',
-};
-
-const Map<String, List<String>> batchimOnlyWordSymbolMap = {
-  'ㄳ': ['삯', '넋', '몫'],
-  'ㄵ': ['앉다', '앉는', '앉고'],
-  'ㄶ': ['않다', '않는', '많다'],
-  'ㄺ': ['닭', '읽다', '맑다'],
-  'ㄻ': ['삶다', '닮다', '옮다'],
-  'ㄼ': ['밟다', '밟는', '넓다', '넓은', '넓고', '짧다'],
-  'ㄽ': ['곬'],
-  'ㄾ': ['핥다', '핥는', '핥고', '훑다'],
-  'ㄿ': ['읊다', '읊는', '읊고'],
-  'ㅀ': ['앓다', '앓고', '앓는', '싫다', '싫어'],
-  'ㅄ': ['값', '값어치', '없다', '없어'],
-};
-
-final Map<String, HangulCharacter> trainingWordBySymbol = {
-  for (final word in consonantTrainingWordPool) word.symbol: word,
-};
-
-final Map<String, List<HangulCharacter>> batchimOnlyQuestionWords = {
-  for (final entry in batchimOnlyWordSymbolMap.entries)
-    entry.key: [
-      for (final symbol in entry.value)
-        if (trainingWordBySymbol.containsKey(symbol))
-          trainingWordBySymbol[symbol]!,
-    ],
-};
-
 class LearnedWordEntry {
   const LearnedWordEntry({
     required this.term,

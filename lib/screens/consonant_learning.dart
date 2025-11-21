@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:learnhangul/l10n/app_localizations.dart';
 
 import '../custom_liquid_glass_dialog.dart';
 import '../design_system.dart';
@@ -57,15 +58,15 @@ class _ConsonantLearningScreenState extends State<ConsonantLearningScreen> {
       barrierColor: Colors.black.withOpacity(0.3),
       builder: (_) => Center(
         child: CustomLiquidGlassDialog(
-          title: const Text('새로운 행 해제'),
+          title: Text(AppLocalizations.of(context)!.rowUnlockTitle),
           content: Text(
-            '앞선 자음 행의 모든 글자를 $kRowUnlockThreshold회 이상 맞히면 다음 행이 열립니다.',
+            AppLocalizations.of(context)!.rowUnlockContent(kRowUnlockThreshold),
           ),
           actions: [
             CustomLiquidGlassDialogAction(
               isConfirmationBlue: true,
               onPressed: () => Navigator.pop(context),
-              child: const Text('확인'),
+              child: Text(AppLocalizations.of(context)!.confirm),
             ),
           ],
         ),
@@ -77,7 +78,7 @@ class _ConsonantLearningScreenState extends State<ConsonantLearningScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: LearnHangulAppBar(
-        '자음 학습',
+        AppLocalizations.of(context)!.consonants,
         trailing: LiquidGlassButtons.circularIconButton(
           context,
           icon: Icons.menu_book_rounded,
@@ -127,7 +128,7 @@ class _ConsonantLearningScreenState extends State<ConsonantLearningScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
             child: LiquidGlassButton(
-              label: '훈련하기',
+              label: AppLocalizations.of(context)!.train,
               onPressed: () async {
                 final ok = await showPremiumVoiceCheckDialog(context);
                 if (!ok) return;

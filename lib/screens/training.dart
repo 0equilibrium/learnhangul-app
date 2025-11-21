@@ -1,3 +1,4 @@
+import 'package:learnhangul/l10n/app_localizations.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
@@ -10,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../custom_liquid_glass_dialog.dart';
 import '../design_system.dart';
+import '../data/training_words_repository.dart';
 import '../liquid_glass_buttons.dart';
 import '../models.dart';
 import '../utils.dart';
@@ -65,6 +67,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
     ConsonantQuestionCategory.single,
   };
   final List<_RetryQuestion> _retryQueue = <_RetryQuestion>[];
+  TrainingWordData? _trainingWords;
   static const int _sessionGoal = 10;
   static const int _minRetryGap = 3;
   int _questionsServed = 0;
@@ -128,12 +131,16 @@ class _TrainingScreenState extends State<TrainingScreen> {
 
   Future<void> _loadCounts() async {
     final prefs = await SharedPreferences.getInstance();
+    TrainingWordData? trainingWords;
+    if (_isConsonantTraining) {
+      trainingWords = _trainingWords ?? await trainingWordRepository.load();
+      _trainingWords = trainingWords;
+    }
     final baseCharacters = widget.sections
         .expand((section) => section.characters)
         .toList();
-    final extraCharacters = _isConsonantTraining
-        ? consonantTrainingWordPool
-        : const <HangulCharacter>[];
+    final extraCharacters =
+        trainingWords?.consonantTrainingWordPool ?? const <HangulCharacter>[];
     final allCharacters = [...baseCharacters, ...extraCharacters];
     final counts = <String, int>{};
     for (var c in allCharacters) {
@@ -150,8 +157,11 @@ class _TrainingScreenState extends State<TrainingScreen> {
         .expand((section) => section.characters)
         .toList();
 
-    if (_isConsonantTraining) {
-      _characters = [..._characters, ...consonantTrainingWordPool];
+    if (trainingWords != null) {
+      _characters = [
+        ..._characters,
+        ...trainingWords.consonantTrainingWordPool,
+      ];
     }
 
     _retryQueue.clear();
@@ -161,7 +171,8 @@ class _TrainingScreenState extends State<TrainingScreen> {
       _sectionSummary = summary;
       _sessionCorrectCounts = {};
       _globalWrongCount = prefs.getInt('global_wrong_count') ?? 0;
-      _allowedConsonantCategories = _isConsonantTraining
+      _allowedConsonantCategories =
+          _isConsonantTraining && trainingWords != null
           ? _buildAllowedConsonantCategories(summary)
           : const {ConsonantQuestionCategory.single};
       _questionsServed = 0;
@@ -768,10 +779,15 @@ class _TrainingScreenState extends State<TrainingScreen> {
 
   ConsonantQuestionCategory _categoryOf(HangulCharacter char) {
     final symbol = char.symbol;
-    if (consonantBatchimWordSymbols.contains(symbol))
-      return ConsonantQuestionCategory.batchimWord;
-    if (consonantOpenWordSymbols.contains(symbol))
-      return ConsonantQuestionCategory.openSyllable;
+    final trainingWords = _trainingWords;
+    if (trainingWords != null) {
+      if (trainingWords.consonantBatchimWordSymbols.contains(symbol)) {
+        return ConsonantQuestionCategory.batchimWord;
+      }
+      if (trainingWords.consonantOpenWordSymbols.contains(symbol)) {
+        return ConsonantQuestionCategory.openSyllable;
+      }
+    }
     if (isHangulJamo(symbol)) return ConsonantQuestionCategory.single;
     if (hasBatchim(symbol)) return ConsonantQuestionCategory.batchimWord;
     return ConsonantQuestionCategory.openSyllable;
@@ -780,8 +796,10 @@ class _TrainingScreenState extends State<TrainingScreen> {
   int _syllableLength(String text) => text.runes.length;
 
   HangulCharacter? _pickBatchimOnlyWord(String symbol) {
+    final trainingWords = _trainingWords;
+    if (trainingWords == null) return null;
     if (!batchimOnlyConsonants.contains(symbol)) return null;
-    final words = batchimOnlyQuestionWords[symbol];
+    final words = trainingWords.batchimOnlyQuestionWords[symbol];
     if (words == null || words.isEmpty) return null;
     return words[_rand.nextInt(words.length)];
   }
@@ -1014,15 +1032,19 @@ class _TrainingScreenState extends State<TrainingScreen> {
         onWillPop: () async => false,
         child: Center(
           child: CustomLiquidGlassDialog(
-            title: const Text('훈련 완료!'),
-            content: Text('총 맞힌 수: $_totalCorrect, 틀린 수: $_globalWrongCount'),
+            title: Text(AppLocalizations.of(context)!.trainingComplete),
+            content: Text(
+              AppLocalizations.of(
+                context,
+              )!.resultSummary(_totalCorrect, _globalWrongCount),
+            ),
             actions: [
               CustomLiquidGlassDialogAction(
                 onPressed: () {
                   Navigator.of(context).pop();
                   _restartSession();
                 },
-                child: const Text('한 번 더 풀기'),
+                child: Text(AppLocalizations.of(context)!.tryAgain),
               ),
               CustomLiquidGlassDialogAction(
                 isConfirmationBlue: true,
@@ -1030,7 +1052,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
                   Navigator.of(context).pop();
                   Navigator.of(context).pop();
                 },
-                child: const Text('홈으로 가기'),
+                child: Text(AppLocalizations.of(context)!.goHome),
               ),
             ],
           ),
@@ -1101,8 +1123,10 @@ class _TrainingScreenState extends State<TrainingScreen> {
     final bool canCheck = !_showResult && _selectedOption != null;
     final bool canAdvance = _showResult && _totalCorrect < _sessionGoal;
     final String buttonLabel = !_showResult
-        ? '정답 확인'
-        : (_totalCorrect >= _sessionGoal ? '완료' : '다음 문제');
+        ? AppLocalizations.of(context)!.checkAnswer
+        : (_totalCorrect >= _sessionGoal
+              ? AppLocalizations.of(context)!.trainingComplete
+              : AppLocalizations.of(context)!.nextQuestion);
     final VoidCallback? primaryAction = !_showResult
         ? (canCheck ? _checkAnswer : null)
         : (canAdvance ? _nextQuestion : null);

@@ -4,6 +4,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'premium_voice_dialog.dart';
 
 import 'design_system.dart';
+import 'package:learnhangul/l10n/app_localizations.dart';
 import 'models.dart';
 import 'utils.dart';
 import 'liquid_glass_buttons.dart';
@@ -667,7 +668,7 @@ class _CharacterDetailSheetState extends State<CharacterDetailSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '예시 단어',
+                        AppLocalizations.of(context)!.exampleWord,
                         style: typography.caption.copyWith(
                           fontSize: 14.0,
                           color: palette.mutedText,
@@ -704,7 +705,9 @@ class _CharacterDetailSheetState extends State<CharacterDetailSheet> {
                                 ),
                                 onPressed: () =>
                                     _speakExampleRaw(widget.character.example),
-                                tooltip: '예시 단어 발음 듣기',
+                                tooltip: AppLocalizations.of(
+                                  context,
+                                )!.exampleWordTooltip,
                               ),
                               if (widget.character.secondExample != null)
                                 IconButton(
@@ -715,7 +718,9 @@ class _CharacterDetailSheetState extends State<CharacterDetailSheet> {
                                   onPressed: () => _speakExampleRaw(
                                     widget.character.secondExample!,
                                   ),
-                                  tooltip: '예시 단어 발음 듣기',
+                                  tooltip: AppLocalizations.of(
+                                    context,
+                                  )!.exampleWordTooltip,
                                 ),
                             ],
                           ),
