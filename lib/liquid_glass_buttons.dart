@@ -60,16 +60,16 @@ class LiquidGlassButtons {
     Color glassColor;
     switch (effectiveVariant) {
       case ButtonVariant.confirmation:
-        glassColor = primary.withOpacity(0.12);
+        glassColor = primary.withValues(alpha: 0.12);
         break;
       case ButtonVariant.destructive:
         glassColor = isBackgroundBright
-            ? theme.colorScheme.surface.withOpacity(0.7)
+            ? theme.colorScheme.surface.withValues(alpha: 0.7)
             : (isLight ? const Color(0x33FFFFFF) : const Color(0x1AFFFFFF));
         break;
       case ButtonVariant.standard:
         glassColor = isBackgroundBright
-            ? theme.colorScheme.surface.withOpacity(0.7)
+            ? theme.colorScheme.surface.withValues(alpha: 0.7)
             : (isLight ? const Color(0x33FFFFFF) : const Color(0x1AFFFFFF));
     }
 
@@ -332,7 +332,7 @@ class LiquidGlassButtons {
     Color textColor;
     if (!isEnabled) {
       final disabled = Theme.of(context).disabledColor;
-      textColor = disabled.withOpacity(0.8);
+      textColor = disabled.withValues(alpha: 0.8);
     } else {
       textColor = _getIconColor(context, effectiveVariant);
     }
@@ -421,14 +421,14 @@ class LiquidGlassButtons {
     final surface = theme.colorScheme.surface;
     final isLight = theme.brightness == Brightness.light;
     final outline = isBackgroundBright
-        ? theme.colorScheme.onSurface.withOpacity(0.12)
+        ? theme.colorScheme.onSurface.withValues(alpha: 0.12)
         : (isLight
-              ? Colors.white.withOpacity(0.4)
-              : Colors.white.withOpacity(0.03));
+              ? Colors.white.withValues(alpha: 0.4)
+              : Colors.white.withValues(alpha: 0.03));
     return BoxDecoration(
       borderRadius: BorderRadius.circular(borderRadius),
       color: isBackgroundBright
-          ? surface.withOpacity(0.7)
+          ? surface.withValues(alpha: 0.7)
           : (isLight ? const Color(0x33FFFFFF) : const Color(0x1AFFFFFF)),
       border: Border.all(color: outline, width: 2.0),
     );

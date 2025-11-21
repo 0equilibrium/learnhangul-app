@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../premium_voice_dialog.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../custom_liquid_glass_dialog.dart';
@@ -14,6 +15,8 @@ import '../design_system.dart';
 import '../data/training_words_repository.dart';
 import '../liquid_glass_buttons.dart';
 import '../models.dart';
+import '../services/ad_ids.dart';
+import '../services/analytics_service.dart';
 import '../utils.dart';
 import 'common.dart';
 
@@ -68,9 +71,13 @@ class _TrainingScreenState extends State<TrainingScreen> {
   };
   final List<_RetryQuestion> _retryQueue = <_RetryQuestion>[];
   TrainingWordData? _trainingWords;
+  TopikWordLevel? _activeTrainingWordLevel;
   static const int _sessionGoal = 10;
   static const int _minRetryGap = 3;
   int _questionsServed = 0;
+  static const String _adPlacementExit = AdIDs.placementExitBeforeComplete;
+  static const String _adPlacementWrong = AdIDs.placementWrongOverFive;
+  bool _sessionLogged = false;
 
   bool get _isVowelTraining => identical(widget.sections, vowelSections);
 
@@ -97,6 +104,20 @@ class _TrainingScreenState extends State<TrainingScreen> {
     if (parts.length < 2) return false;
     final first = parts.first.name;
     return parts.any((p) => p.name != first);
+  }
+
+  bool get _includesWordPool =>
+      _trainingWords?.consonantTrainingWordPool.isNotEmpty ?? false;
+
+  void _logSessionStart({required bool includesWordPool}) {
+    if (_sessionLogged) return;
+    AnalyticsService.instance.trackTrainingSessionStarted(
+      isConsonantSession: _isConsonantTraining,
+      includesWordPool: includesWordPool,
+      questionPoolSize: _characters.length,
+      wordLevel: _activeTrainingWordLevel,
+    );
+    _sessionLogged = true;
   }
 
   @override
@@ -133,14 +154,23 @@ class _TrainingScreenState extends State<TrainingScreen> {
     final prefs = await SharedPreferences.getInstance();
     TrainingWordData? trainingWords;
     if (_isConsonantTraining) {
-      trainingWords = _trainingWords ?? await trainingWordRepository.load();
-      _trainingWords = trainingWords;
+      final level = await TopikWordLevelPreferences.load();
+      final shouldReload =
+          _trainingWords == null || _activeTrainingWordLevel != level;
+      if (shouldReload) {
+        trainingWords = await trainingWordRepository.load(level: level);
+        _trainingWords = trainingWords;
+        _activeTrainingWordLevel = level;
+      } else {
+        trainingWords = _trainingWords;
+      }
     }
     final baseCharacters = widget.sections
         .expand((section) => section.characters)
         .toList();
     final extraCharacters =
         trainingWords?.consonantTrainingWordPool ?? const <HangulCharacter>[];
+    final includesWordPool = extraCharacters.isNotEmpty;
     final allCharacters = [...baseCharacters, ...extraCharacters];
     final counts = <String, int>{};
     for (var c in allCharacters) {
@@ -164,6 +194,11 @@ class _TrainingScreenState extends State<TrainingScreen> {
       ];
     }
 
+    // Exclude affix-like training entries (contain '-') from being presented
+    // during training. They remain in the repository for storage/lookup,
+    // but shouldn't be used as candidates or options.
+    _characters = _characters.where((c) => !c.symbol.contains('-')).toList();
+
     _retryQueue.clear();
 
     setState(() {
@@ -177,7 +212,9 @@ class _TrainingScreenState extends State<TrainingScreen> {
           : const {ConsonantQuestionCategory.single};
       _questionsServed = 0;
     });
+    _sessionLogged = false;
     _startNewQuestion();
+    _logSessionStart(includesWordPool: includesWordPool);
   }
 
   Future<void> _updateCountsAndSave() async {
@@ -296,12 +333,15 @@ class _TrainingScreenState extends State<TrainingScreen> {
         for (final m in allowedModes) {
           final key = '${c.symbol}|${m.given.index}-${m.choose.index}';
           if (_sessionCorrectPairs.contains(key)) continue;
-          if (_lastCharacterSymbol != null && c.symbol == _lastCharacterSymbol)
+          if (_lastCharacterSymbol != null &&
+              c.symbol == _lastCharacterSymbol) {
             continue;
+          }
           if (_lastMode != null &&
               m.given == _lastMode!.given &&
-              m.choose == _lastMode!.choose)
+              m.choose == _lastMode!.choose) {
             continue;
+          }
           candidates.add(MapEntry(c, m));
         }
       }
@@ -309,8 +349,9 @@ class _TrainingScreenState extends State<TrainingScreen> {
       if (candidates.isEmpty) {
         for (final c in sourcePool) {
           if (_isConsonantTraining &&
-              !_allowedConsonantCategories.contains(_categoryOf(c)))
+              !_allowedConsonantCategories.contains(_categoryOf(c))) {
             continue;
+          }
           final allowedModes = (useTargetPool)
               ? modes.where((m) => m.given != GivenType.sound).toList()
               : modes;
@@ -361,8 +402,9 @@ class _TrainingScreenState extends State<TrainingScreen> {
       if (candidates.isEmpty && useTargetPool && reviewPool.isNotEmpty) {
         for (final c in reviewPool) {
           if (_isConsonantTraining &&
-              !_allowedConsonantCategories.contains(_categoryOf(c)))
+              !_allowedConsonantCategories.contains(_categoryOf(c))) {
             continue;
+          }
           for (final m in modes) {
             final key = '${c.symbol}|${m.given.index}-${m.choose.index}';
             if (_sessionCorrectPairs.contains(key)) continue;
@@ -373,7 +415,9 @@ class _TrainingScreenState extends State<TrainingScreen> {
 
       if (candidates.isEmpty && _isConsonantTraining) {
         for (final c in sourcePool) {
-          if (!_allowedConsonantCategories.contains(_categoryOf(c))) continue;
+          if (!_allowedConsonantCategories.contains(_categoryOf(c))) {
+            continue;
+          }
           for (final m in modes) {
             candidates.add(MapEntry(c, m));
           }
@@ -456,10 +500,60 @@ class _TrainingScreenState extends State<TrainingScreen> {
 
   String _getNameFromSymbol(String symbol) {
     final idx = _characters.indexWhere((c) => c.symbol == symbol);
-    if (idx != -1) {
-      return _pronunciationFor(_characters[idx]);
+    if (idx != -1) return _pronunciationFor(_characters[idx]);
+
+    // Fallback: symbol may be a training-word that was filtered out from
+    // the presented pool (e.g. affix-like entries). Try lookup in the
+    // training words repository so pronunciation/name is available for TTS.
+    final trainingWords = _trainingWords;
+    if (trainingWords != null) {
+      final hw = trainingWords.trainingWordBySymbol[symbol];
+      if (hw != null) return _pronunciationFor(hw);
     }
+
     return symbol;
+  }
+
+  bool _isTrainingWordSymbol(String symbol) {
+    final trainingWords = _trainingWords;
+    if (trainingWords == null) return false;
+    return trainingWords.trainingWordBySymbol.containsKey(symbol);
+  }
+
+  List<HangulCharacter> _batchimOnlyOptionPool() {
+    final trainingWords = _trainingWords;
+    if (trainingWords == null) return const [];
+    final seen = <String>{};
+    final pool = <HangulCharacter>[];
+    for (final word in trainingWords.batchimOnlyWordPool) {
+      if (word.symbol.contains('-')) continue;
+      if (seen.add(word.symbol)) pool.add(word);
+    }
+    return pool;
+  }
+
+  String _hangulDisplayLabel(HangulCharacter char) {
+    if (_isTrainingWordSymbol(char.symbol)) {
+      return sanitizeTrainingWordSymbol(char.symbol);
+    }
+    if (char.type == HangulCharacterType.vowel) return char.name;
+    return char.symbol;
+  }
+
+  String _formatOptionLabel(String option) {
+    // If this option corresponds to a training-word symbol (loaded from
+    // CSV), present a sanitized form to the user so numeric suffixes and
+    // punctuation are not shown. This applies regardless of the current
+    // choose mode (e.g. for sound options we still reveal the clean
+    // Hangul text when answers are shown).
+    if (_isTrainingWordSymbol(option)) {
+      return sanitizeTrainingWordSymbol(option);
+    }
+
+    // Otherwise, for non-training-word options, only special-case
+    // Hangul-mode where vowel characters use their `name`.
+    if (_currentMode?.choose != ChooseType.hangul) return option;
+    return option;
   }
 
   String _pronunciationFor(HangulCharacter char) {
@@ -602,9 +696,22 @@ class _TrainingScreenState extends State<TrainingScreen> {
       questionCategory = _categoryOf(question);
       final length = _syllableLength(question.symbol);
       targetConsonantLength = length;
-      final categoryPool = _characters
-          .where((c) => _categoryOf(c) == questionCategory)
-          .toList();
+      final bool useBatchimOnlyPool =
+          questionCategory == ConsonantQuestionCategory.batchimWord &&
+          _isBatchimOnlyTrackingSymbol();
+      List<HangulCharacter> categoryPool;
+      if (useBatchimOnlyPool) {
+        categoryPool = _batchimOnlyOptionPool();
+        if (categoryPool.isEmpty) {
+          categoryPool = _characters
+              .where((c) => _categoryOf(c) == questionCategory)
+              .toList();
+        }
+      } else {
+        categoryPool = _characters
+            .where((c) => _categoryOf(c) == questionCategory)
+            .toList();
+      }
       final sameLengthPool = categoryPool
           .where((c) => _syllableLength(c.symbol) == length)
           .toList();
@@ -615,25 +722,48 @@ class _TrainingScreenState extends State<TrainingScreen> {
     }
 
     List<HangulCharacter> optionsPool = pool.where((c) {
-      if (_getOptionValue(c) == correct) return false;
+      if (_getOptionValue(c) == correct) {
+        return false;
+      }
       if (enforceSequenceLength &&
           question.name.length >= 2 &&
-          c.name.length != question.name.length)
+          c.name.length != question.name.length) {
         return false;
+      }
       if (targetConsonantLength != null &&
-          _syllableLength(c.symbol) != targetConsonantLength)
+          _syllableLength(c.symbol) != targetConsonantLength) {
         return false;
+      }
       return true;
     }).toList();
 
-    List<HangulCharacter> _filterForSoundGiven(List<HangulCharacter> source) {
+    List<HangulCharacter> filterForSoundGiven(List<HangulCharacter> source) {
       if (!_isGivenSound || _currentQuestion == null) return source;
       final group = _ttsGroupForSymbol(_currentQuestion!.symbol);
       if (group == null) return source;
       return source.where((c) => !group.contains(c.symbol)).toList();
     }
 
-    optionsPool = _filterForSoundGiven(optionsPool);
+    optionsPool = filterForSoundGiven(optionsPool);
+
+    // If the current question expects romanization as the choice, ensure
+    // candidate options have the same number of romanization parts
+    // (syllable-separated by '-') as the correct answer. This prevents
+    // mixing 1/2/3-syllable romanizations when the question has 3
+    // syllables (e.g. '값어치' -> 'gap-eo-chi').
+    if (_currentMode?.choose == ChooseType.romanization) {
+      final correctRoman = _getCorrectOption();
+      final expectedParts = correctRoman
+          .split('-')
+          .where((p) => p.isNotEmpty)
+          .length;
+      optionsPool = optionsPool.where((c) {
+        final parts = _getOptionValue(
+          c,
+        ).split('-').where((p) => p.isNotEmpty).length;
+        return parts == expectedParts;
+      }).toList();
+    }
 
     if (optionsPool.length < 5) {
       optionsPool = _buildFallbackOptions(
@@ -643,12 +773,29 @@ class _TrainingScreenState extends State<TrainingScreen> {
         targetConsonantLength: targetConsonantLength,
         categoryOverride: questionCategory,
       );
-      optionsPool = _filterForSoundGiven(optionsPool);
+      optionsPool = filterForSoundGiven(optionsPool);
+
+      // Re-apply romanization-length filter after fallback generation as
+      // the fallback may have introduced candidates with differing
+      // syllable counts.
+      if (_currentMode?.choose == ChooseType.romanization) {
+        final correctRoman = _getCorrectOption();
+        final expectedParts = correctRoman
+            .split('-')
+            .where((p) => p.isNotEmpty)
+            .length;
+        optionsPool = optionsPool.where((c) {
+          final parts = _getOptionValue(
+            c,
+          ).split('-').where((p) => p.isNotEmpty).length;
+          return parts == expectedParts;
+        }).toList();
+      }
     }
 
     optionsPool.shuffle();
 
-    final selectedCharOthers = optionsPool.take(5).toList();
+    var selectedCharOthers = optionsPool.take(5).toList();
 
     if (enforceSequenceLength && question.name.length >= 2) {
       selectedCharOthers.retainWhere(
@@ -667,6 +814,14 @@ class _TrainingScreenState extends State<TrainingScreen> {
       }
     }
 
+    if (_isBatchimOnlyTrackingSymbol() && _isGivenSound) {
+      selectedCharOthers = _filterBatchimSoundConflicts(
+        selectedCharOthers,
+        question,
+        optionsPool,
+      );
+    }
+
     selectedCharOthers.removeWhere((c) => _getOptionValue(c) == correct);
 
     final selectedOthers = selectedCharOthers
@@ -677,17 +832,21 @@ class _TrainingScreenState extends State<TrainingScreen> {
     selectedOthers.shuffle();
 
     if (_isGivenSound || _isChooseSound) {
-      HangulCharacter? _charForOption(String opt) {
-        for (final c in _characters) if (_getOptionValue(c) == opt) return c;
+      HangulCharacter? charForOption(String opt) {
+        for (final c in _characters) {
+          if (_getOptionValue(c) == opt) return c;
+        }
         final seqs = _buildVowelSequencePool();
-        for (final c in seqs) if (_getOptionValue(c) == opt) return c;
+        for (final c in seqs) {
+          if (_getOptionValue(c) == opt) return c;
+        }
         return null;
       }
 
       for (final group in _ttsConfusableGroups) {
         final present = <String>[];
         for (final opt in selectedOthers) {
-          final c = _charForOption(opt);
+          final c = charForOption(opt);
           if (c == null) continue;
           if (group.contains(c.symbol)) present.add(opt);
         }
@@ -700,7 +859,9 @@ class _TrainingScreenState extends State<TrainingScreen> {
         if (keepOpt.isEmpty) keepOpt = present.first;
 
         for (final opt in present) {
-          if (opt == keepOpt) continue;
+          if (opt == keepOpt) {
+            continue;
+          }
           selectedOthers.remove(opt);
         }
 
@@ -714,8 +875,9 @@ class _TrainingScreenState extends State<TrainingScreen> {
           replacementChar = candidate;
           break;
         }
-        if (replacementChar != null)
+        if (replacementChar != null) {
           selectedOthers.add(_getOptionValue(replacementChar));
+        }
         selectedOthers.shuffle();
       }
     }
@@ -735,7 +897,17 @@ class _TrainingScreenState extends State<TrainingScreen> {
       final category = categoryOverride ?? _categoryOf(question);
       final desiredLength =
           targetConsonantLength ?? _syllableLength(question.symbol);
-      pool = _characters.where((c) {
+      final useBatchimOnlyPool =
+          category == ConsonantQuestionCategory.batchimWord &&
+          _isBatchimOnlyTrackingSymbol();
+      List<HangulCharacter> sourcePool;
+      if (useBatchimOnlyPool) {
+        sourcePool = _batchimOnlyOptionPool();
+        if (sourcePool.isEmpty) sourcePool = _characters;
+      } else {
+        sourcePool = _characters;
+      }
+      pool = sourcePool.where((c) {
         if (_getOptionValue(c) == correctOption) return false;
         if (_categoryOf(c) != category) return false;
         if (_syllableLength(c.symbol) != desiredLength) return false;
@@ -744,7 +916,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
 
       if (pool.length >= 5) return pool;
 
-      return _characters.where((c) {
+      return sourcePool.where((c) {
         if (_getOptionValue(c) == correctOption) return false;
         return _categoryOf(c) == category;
       }).toList();
@@ -763,6 +935,57 @@ class _TrainingScreenState extends State<TrainingScreen> {
         .toList();
   }
 
+  List<HangulCharacter> _filterBatchimSoundConflicts(
+    List<HangulCharacter> initial,
+    HangulCharacter question,
+    List<HangulCharacter> sourcePool, {
+    int desiredCount = 5,
+  }) {
+    final questionKey = batchimOnlyPronunciationKey(question.symbol);
+    if (questionKey == null) return initial;
+    final seenKeys = <String>{questionKey};
+    final unique = <HangulCharacter>[];
+    final fallback = <HangulCharacter>[];
+    final usedSymbols = <String>{};
+
+    void categorize(HangulCharacter candidate) {
+      if (usedSymbols.contains(candidate.symbol)) return;
+      usedSymbols.add(candidate.symbol);
+      final key = batchimOnlyPronunciationKey(candidate.symbol);
+      if (key == null) {
+        fallback.add(candidate);
+        return;
+      }
+      if (seenKeys.add(key)) {
+        unique.add(candidate);
+      } else {
+        fallback.add(candidate);
+      }
+    }
+
+    for (final candidate in initial) {
+      categorize(candidate);
+    }
+
+    if (unique.length < desiredCount) {
+      for (final candidate in sourcePool) {
+        if (unique.length >= desiredCount) break;
+        categorize(candidate);
+      }
+    }
+
+    final result = <HangulCharacter>[];
+    for (final cand in unique) {
+      if (result.length >= desiredCount) break;
+      result.add(cand);
+    }
+    for (final cand in fallback) {
+      if (result.length >= desiredCount) break;
+      result.add(cand);
+    }
+    return result.isEmpty ? initial : result;
+  }
+
   String _getCorrectOption() => _getOptionValue(_currentQuestion!);
 
   String _getOptionValue(HangulCharacter char) {
@@ -779,6 +1002,9 @@ class _TrainingScreenState extends State<TrainingScreen> {
 
   ConsonantQuestionCategory _categoryOf(HangulCharacter char) {
     final symbol = char.symbol;
+    if (batchimOnlyConsonants.contains(symbol)) {
+      return ConsonantQuestionCategory.batchimWord;
+    }
     final trainingWords = _trainingWords;
     if (trainingWords != null) {
       if (trainingWords.consonantBatchimWordSymbols.contains(symbol)) {
@@ -793,7 +1019,18 @@ class _TrainingScreenState extends State<TrainingScreen> {
     return ConsonantQuestionCategory.openSyllable;
   }
 
-  int _syllableLength(String text) => text.runes.length;
+  int _syllableLength(String text) {
+    // If this text is a training-word symbol (from the CSV), compute length
+    // based on the sanitized name so numeric suffixes don't affect length
+    // comparisons used when building option pools.
+    // Always sanitize the incoming text first so that any numeric suffixes
+    // or punctuation are removed before computing length. This ensures
+    // variants like "소재02" or "지구02" count as the correct Hangul
+    // syllable length rather than including digits.
+    final sanitized = sanitizeTrainingWordSymbol(text);
+    if (sanitized.isNotEmpty) return sanitized.runes.length;
+    return text.runes.length;
+  }
 
   HangulCharacter? _pickBatchimOnlyWord(String symbol) {
     final trainingWords = _trainingWords;
@@ -801,27 +1038,31 @@ class _TrainingScreenState extends State<TrainingScreen> {
     if (!batchimOnlyConsonants.contains(symbol)) return null;
     final words = trainingWords.batchimOnlyQuestionWords[symbol];
     if (words == null || words.isEmpty) return null;
-    return words[_rand.nextInt(words.length)];
+    final presentable = words.where((w) => !w.symbol.contains('-')).toList();
+    if (presentable.isEmpty) return null;
+    return presentable[_rand.nextInt(presentable.length)];
   }
 
   String _questionTrackingSymbol() =>
       _currentTrackingSymbol ?? (_currentQuestion?.symbol ?? '');
 
+  bool _isBatchimOnlyTrackingSymbol() =>
+      batchimOnlyConsonants.contains(_questionTrackingSymbol());
+
   bool get _isGivenSound => _currentMode?.given == GivenType.sound;
   bool get _isChooseSound => _currentMode?.choose == ChooseType.sound;
 
   List<String>? _ttsGroupForSymbol(String symbol) {
-    for (final group in _ttsConfusableGroups)
+    for (final group in _ttsConfusableGroups) {
       if (group.contains(symbol)) return group;
+    }
     return null;
   }
 
   String _getGivenDisplay() {
     switch (_currentMode!.given) {
       case GivenType.hangul:
-        return _currentQuestion!.type == HangulCharacterType.vowel
-            ? _currentQuestion!.name
-            : _currentQuestion!.symbol;
+        return _hangulDisplayLabel(_currentQuestion!);
       case GivenType.sound:
         return '';
       case GivenType.romanization:
@@ -852,6 +1093,9 @@ class _TrainingScreenState extends State<TrainingScreen> {
   void _checkAnswer() async {
     final correct = _getCorrectOption();
     final isCorrect = _selectedOption == correct;
+    final questionSymbol = _currentQuestion?.symbol;
+    final givenTypeName = _currentMode?.given.name;
+    final chooseTypeName = _currentMode?.choose.name;
     setState(() {
       _showResult = true;
       _isCorrect = isCorrect;
@@ -885,17 +1129,32 @@ class _TrainingScreenState extends State<TrainingScreen> {
       } else {
         _globalWrongCount++;
         if (_globalWrongCount >= 5) {
-          _showAdDialog();
+          _showInterstitialAd(placement: _adPlacementWrong);
           _globalWrongCount = 0;
         }
         _saveCounts();
       }
     });
-    if (!isCorrect && _currentQuestion != null && _currentMode != null)
+    if (questionSymbol != null &&
+        givenTypeName != null &&
+        chooseTypeName != null) {
+      AnalyticsService.instance.trackTrainingQuestion(
+        isCorrect: isCorrect,
+        symbol: questionSymbol,
+        givenType: givenTypeName,
+        chooseType: chooseTypeName,
+      );
+    }
+    if (!isCorrect && _currentQuestion != null && _currentMode != null) {
       _scheduleRetry(_currentQuestion!, _currentMode!);
+    }
     _rememberCurrentWord();
     if (_totalCorrect == _sessionGoal) {
       await _updateCountsAndSave();
+      AnalyticsService.instance.trackTrainingCompleted(
+        totalCorrect: _totalCorrect,
+        mistakes: _globalWrongCount,
+      );
       _showCompletionDialog();
     }
   }
@@ -921,12 +1180,14 @@ class _TrainingScreenState extends State<TrainingScreen> {
                   ),
                 )
                 .toList();
-      final idx = entries.indexWhere((e) => e.term == char.symbol);
+      final idx = entries.indexWhere((e) => e.symbol == char.symbol);
       final now = DateTime.now();
+      final displayTerm = _hangulDisplayLabel(char);
       if (idx == -1) {
         entries.add(
           LearnedWordEntry(
-            term: char.symbol,
+            symbol: char.symbol,
+            term: displayTerm,
             romanization: char.romanization,
             meaning: char.meaning,
             seenAt: now,
@@ -1020,6 +1281,8 @@ class _TrainingScreenState extends State<TrainingScreen> {
       _currentTrackingSymbol = null;
       _startNewQuestion();
     });
+    _sessionLogged = false;
+    _logSessionStart(includesWordPool: _includesWordPool);
   }
 
   void _showCompletionDialog() {
@@ -1027,9 +1290,9 @@ class _TrainingScreenState extends State<TrainingScreen> {
       context: context,
       barrierDismissible: false,
       useRootNavigator: false,
-      barrierColor: Colors.black.withOpacity(0.3),
-      builder: (_) => WillPopScope(
-        onWillPop: () async => false,
+      barrierColor: Colors.black.withValues(alpha: 0.3),
+      builder: (_) => PopScope(
+        canPop: false,
         child: Center(
           child: CustomLiquidGlassDialog(
             title: Text(AppLocalizations.of(context)!.trainingComplete),
@@ -1061,12 +1324,12 @@ class _TrainingScreenState extends State<TrainingScreen> {
     );
   }
 
-  void _showAdDialog() {
+  void _showAdDialog({VoidCallback? onClosed}) {
     showDialog(
       context: context,
       barrierDismissible: false,
       useRootNavigator: false,
-      barrierColor: Colors.black.withOpacity(0.3),
+      barrierColor: Colors.black.withValues(alpha: 0.3),
       builder: (_) => Center(
         child: CustomLiquidGlassDialog(
           title: const Text('잠깐 숨 돌려요'),
@@ -1074,7 +1337,10 @@ class _TrainingScreenState extends State<TrainingScreen> {
           actions: [
             CustomLiquidGlassDialogAction(
               isConfirmationBlue: true,
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                Navigator.pop(context);
+                onClosed?.call();
+              },
               child: const Text('확인'),
             ),
           ],
@@ -1083,28 +1349,60 @@ class _TrainingScreenState extends State<TrainingScreen> {
     );
   }
 
+  void _showInterstitialAd({
+    required String placement,
+    VoidCallback? onCompleted,
+  }) {
+    InterstitialAd.load(
+      adUnitId: AdIDs.interstitial(placement),
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          ad.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              ad.dispose();
+              onCompleted?.call();
+            },
+            onAdFailedToShowFullScreenContent: (ad, error) {
+              debugPrint('Interstitial show failed ($placement): $error');
+              ad.dispose();
+              _showAdDialog(onClosed: onCompleted);
+            },
+          );
+          AnalyticsService.instance.trackAdShown(placement);
+          ad.show();
+        },
+        onAdFailedToLoad: (error) {
+          debugPrint('Interstitial load failed ($placement): $error');
+          _showAdDialog(onClosed: onCompleted);
+        },
+      ),
+    );
+  }
+
   void _showExitDialog() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       barrierDismissible: false,
       useRootNavigator: false,
-      barrierColor: Colors.black.withOpacity(0.3),
+      barrierColor: Colors.black.withValues(alpha: 0.3),
       builder: (_) => Center(
         child: CustomLiquidGlassDialog(
-          title: const Text('훈련 중단'),
-          content: const Text('지금 나가면 훈련 기록이 저장되지 않아요. 그래도 나가시겠어요?'),
+          title: Text(l10n.trainingExitTitle),
+          content: Text(l10n.trainingExitMessage),
           actions: [
             CustomLiquidGlassDialogAction(
               onPressed: () {
                 Navigator.of(context).pop();
-                Navigator.of(context).pop();
+                _handleExitConfirmed();
               },
-              child: const Text('나가기'),
+              child: Text(l10n.trainingExitLeave),
             ),
             CustomLiquidGlassDialogAction(
               isConfirmationBlue: true,
               onPressed: () => Navigator.pop(context),
-              child: const Text('훈련하기'),
+              child: Text(l10n.trainingExitStay),
             ),
           ],
         ),
@@ -1112,10 +1410,25 @@ class _TrainingScreenState extends State<TrainingScreen> {
     );
   }
 
+  void _handleExitConfirmed() {
+    AnalyticsService.instance.trackTrainingExit(
+      progress: _totalCorrect,
+      mistakes: _globalWrongCount,
+    );
+    _showInterstitialAd(
+      placement: _adPlacementExit,
+      onCompleted: () {
+        if (!mounted) return;
+        Navigator.of(context).pop();
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (_currentMode == null || _currentQuestion == null)
+    if (_currentMode == null || _currentQuestion == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     final palette = LearnHangulTheme.paletteOf(context);
     final typography = LearnHangulTheme.typographyOf(context);
@@ -1131,8 +1444,8 @@ class _TrainingScreenState extends State<TrainingScreen> {
         ? (canCheck ? _checkAnswer : null)
         : (canAdvance ? _nextQuestion : null);
 
-    return WillPopScope(
-      onWillPop: () async => false,
+    return PopScope(
+      canPop: false,
       child: Scaffold(
         body: SafeArea(
           bottom: false,
@@ -1178,7 +1491,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
                       onTap: () => _playSound(_currentQuestion!.symbol),
                       child: Center(
                         child: Icon(
-                          Icons.volume_up_rounded,
+                          CupertinoIcons.speaker_2,
                           size: 40,
                           color: palette.primaryText,
                         ),
@@ -1202,30 +1515,124 @@ class _TrainingScreenState extends State<TrainingScreen> {
                   ),
                 const SizedBox(height: 16),
                 Expanded(
-                  child: GridView.builder(
-                    padding: EdgeInsets.zero,
-                    physics: const BouncingScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          mainAxisSpacing: 18,
-                          crossAxisSpacing: 18,
-                          childAspectRatio: 1.1,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      const spacing = 18.0;
+                      final itemCount = _options.length;
+
+                      // Start with 3 columns (2 rows for 6 items)
+                      int columns = 3;
+                      int rows = (itemCount + columns - 1) ~/ columns;
+
+                      final totalHorizontalSpacing = (columns - 1) * spacing;
+                      final totalVerticalSpacing = (rows - 1) * spacing;
+
+                      final cardWidth =
+                          (constraints.maxWidth - totalHorizontalSpacing) /
+                          (columns == 0 ? 1 : columns);
+                      final cardHeight =
+                          (constraints.maxHeight - totalVerticalSpacing) /
+                          (rows == 0 ? 1 : rows);
+                      // Cap per-card height so tiles don't stretch excessively tall
+                      const double maxCardHeight = 140.0;
+                      final measuredCardHeight = cardHeight.clamp(
+                        0.0,
+                        maxCardHeight,
+                      );
+
+                      // Measure text to see if it would overflow the computed card size.
+                      final textScaler = MediaQuery.textScalerOf(context);
+                      final baseFontSize =
+                          (LearnHangulTheme.typographyOf(
+                            context,
+                          ).heading.fontSize ??
+                          16.0);
+                      final textStyle = LearnHangulTheme.typographyOf(
+                        context,
+                      ).heading.copyWith(fontSize: baseFontSize);
+
+                      bool needsMoreHorizontalSpace = false;
+                      for (final option in _options) {
+                        final label = _formatOptionLabel(option);
+                        final tp = TextPainter(
+                          text: TextSpan(
+                            text: label,
+                            style: textStyle.copyWith(
+                              fontSize: textScaler.scale(baseFontSize),
+                            ),
+                          ),
+                          textDirection: TextDirection.ltr,
+                          maxLines: 10,
+                        );
+                        // Give a small padding allowance within the card.
+                        final available = (cardWidth - 16.0).clamp(
+                          10.0,
+                          double.infinity,
+                        );
+                        tp.layout(maxWidth: available);
+                        // Compare against the capped measured height so extremely
+                        // tall available space doesn't cause oversized tiles.
+                        if (tp.height > (measuredCardHeight - 16.0)) {
+                          needsMoreHorizontalSpace = true;
+                          break;
+                        }
+                      }
+
+                      if (needsMoreHorizontalSpace) {
+                        columns = 2; // switch to 3 rows x 2 columns layout
+                      }
+
+                      rows = (itemCount + columns - 1) ~/ columns;
+                      final computedTotalHorizontalSpacing =
+                          (columns - 1) * spacing;
+                      final computedTotalVerticalSpacing = (rows - 1) * spacing;
+                      final computedCardWidth =
+                          (constraints.maxWidth -
+                              computedTotalHorizontalSpacing) /
+                          (columns == 0 ? 1 : columns);
+                      final computedCardHeight =
+                          (constraints.maxHeight -
+                              computedTotalVerticalSpacing) /
+                          (rows == 0 ? 1 : rows);
+
+                      // Cap the final card height to avoid very tall tiles when the
+                      // grid area is large; use this capped height to compute aspect ratio.
+                      final usedCardHeight = computedCardHeight.clamp(
+                        0.0,
+                        maxCardHeight,
+                      );
+
+                      final childAspectRatio =
+                          computedCardWidth /
+                          (usedCardHeight == 0 ? 1 : usedCardHeight);
+
+                      return GridView.builder(
+                        padding: EdgeInsets.zero,
+                        physics: const BouncingScrollPhysics(),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: columns,
+                          mainAxisSpacing: spacing,
+                          crossAxisSpacing: spacing,
+                          childAspectRatio: childAspectRatio.isFinite
+                              ? childAspectRatio
+                              : 1.1,
                         ),
-                    itemCount: _options.length,
-                    itemBuilder: (context, index) {
-                      final option = _options[index];
-                      return _buildOptionCard(
-                        context: context,
-                        option: option,
-                        isCorrectAnswer: option == _getCorrectOption(),
-                        isSelected: option == _selectedOption,
-                        showIcon:
-                            _currentMode!.choose == ChooseType.sound &&
-                            !_showResult,
-                        onTap: _showResult
-                            ? null
-                            : () => _onOptionSelected(option),
+                        itemCount: _options.length,
+                        itemBuilder: (context, index) {
+                          final option = _options[index];
+                          return _buildOptionCard(
+                            context: context,
+                            option: option,
+                            isCorrectAnswer: option == _getCorrectOption(),
+                            isSelected: option == _selectedOption,
+                            showIcon:
+                                _currentMode!.choose == ChooseType.sound &&
+                                !_showResult,
+                            onTap: _showResult
+                                ? null
+                                : () => _onOptionSelected(option),
+                          );
+                        },
                       );
                     },
                   ),
@@ -1261,6 +1668,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
   }) {
     final palette = LearnHangulTheme.paletteOf(context);
     final typography = LearnHangulTheme.typographyOf(context);
+    final displayLabel = _formatOptionLabel(option);
 
     Color background = palette.surface;
     Color border = palette.outline;
@@ -1268,17 +1676,17 @@ class _TrainingScreenState extends State<TrainingScreen> {
 
     if (_showResult) {
       if (isCorrectAnswer) {
-        background = palette.success.withOpacity(0.15);
+        background = palette.success.withValues(alpha: 0.15);
         border = palette.success;
         foreground = palette.success;
       } else if (isSelected && !_isCorrect) {
-        background = palette.danger.withOpacity(0.15);
+        background = palette.danger.withValues(alpha: 0.15);
         border = palette.danger;
         foreground = palette.danger;
       }
     } else if (isSelected) {
-      background = palette.info.withOpacity(0.12);
-      border = palette.info.withOpacity(0.5);
+      background = palette.info.withValues(alpha: 0.12);
+      border = palette.info.withValues(alpha: 0.5);
       foreground = palette.info;
     }
 
@@ -1289,20 +1697,18 @@ class _TrainingScreenState extends State<TrainingScreen> {
         borderRadius: BorderRadius.circular(28),
         border: Border.all(color: border),
       ),
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(28),
-          onTap: onTap,
-          child: Center(
-            child: showIcon
-                ? Icon(Icons.volume_up_rounded, color: foreground, size: 34)
-                : Text(
-                    option,
-                    textAlign: TextAlign.center,
-                    style: typography.heading.copyWith(color: foreground),
-                  ),
-          ),
+      child: CupertinoButton(
+        padding: EdgeInsets.zero,
+        borderRadius: BorderRadius.circular(28),
+        onPressed: onTap,
+        child: Center(
+          child: showIcon
+              ? Icon(CupertinoIcons.speaker_2, color: foreground, size: 34)
+              : Text(
+                  displayLabel,
+                  textAlign: TextAlign.center,
+                  style: typography.heading.copyWith(color: foreground),
+                ),
         ),
       ),
     );

@@ -5,6 +5,8 @@ import 'package:flutter_tts/flutter_tts.dart';
 import '../premium_voice_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:learnhangul/l10n/app_localizations.dart';
+
 import '../design_system.dart';
 import 'common.dart';
 
@@ -84,9 +86,9 @@ class _LearnedWordsScreenState extends State<LearnedWordsScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        appBar: LearnHangulAppBar('내가 학습한 단어'),
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        appBar: LearnHangulAppBar(AppLocalizations.of(context)!.learnedWords),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -107,10 +109,13 @@ class _LearnedWordsScreenState extends State<LearnedWordsScreen> {
                 color: palette.secondaryText,
               ),
               const SizedBox(height: 12),
-              Text('아직 정리된 단어가 없어요.', style: typography.heading),
+              Text(
+                AppLocalizations.of(context)!.learnedWordsEmptyTitle,
+                style: typography.heading,
+              ),
               const SizedBox(height: 8),
               Text(
-                '훈련하기에서 새로운 단어를 만나면 여기에 차곡차곡 쌓여요.',
+                AppLocalizations.of(context)!.learnedWordsEmptySubtitle,
                 textAlign: TextAlign.center,
                 style: typography.body.copyWith(color: palette.secondaryText),
               ),
@@ -160,6 +165,9 @@ class _LearnedWordsScreenState extends State<LearnedWordsScreen> {
       );
     }
 
-    return Scaffold(appBar: const LearnHangulAppBar('내가 학습한 단어'), body: body);
+    return Scaffold(
+      appBar: LearnHangulAppBar(AppLocalizations.of(context)!.learnedWords),
+      body: body,
+    );
   }
 }

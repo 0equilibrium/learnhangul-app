@@ -63,8 +63,7 @@ import 'app_localizations_ko.dart';
 /// be consistent with the languages listed in the AppLocalizations.supportedLocales
 /// property.
 abstract class AppLocalizations {
-  AppLocalizations(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -72,8 +71,7 @@ abstract class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate =
-      _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
 
   /// A list of this localizations delegate along with the default localizations
   /// delegates.
@@ -85,19 +83,18 @@ abstract class AppLocalizations {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
-      <LocalizationsDelegate<dynamic>>[
-        delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ];
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
     Locale('ja'),
-    Locale('ko'),
+    Locale('ko')
   ];
 
   /// No description provided for @appTitle.
@@ -148,6 +145,30 @@ abstract class AppLocalizations {
   /// **'Training complete!'**
   String get trainingComplete;
 
+  /// No description provided for @trainingExitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave training?'**
+  String get trainingExitTitle;
+
+  /// No description provided for @trainingExitMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your current training session won\'t be saved if you leave now. Exit anyway?'**
+  String get trainingExitMessage;
+
+  /// No description provided for @trainingExitLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get trainingExitLeave;
+
+  /// No description provided for @trainingExitStay.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep training'**
+  String get trainingExitStay;
+
   /// No description provided for @resultSummary.
   ///
   /// In en, this message translates to:
@@ -177,6 +198,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Play example word pronunciation'**
   String get exampleWordTooltip;
+
+  /// No description provided for @nameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get nameLabel;
+
+  /// No description provided for @romanizationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Romanization'**
+  String get romanizationLabel;
 
   /// No description provided for @settings.
   ///
@@ -214,6 +247,60 @@ abstract class AppLocalizations {
   /// **'Automatically hear voice hints during questions'**
   String get ttsHintsSubtitle;
 
+  /// No description provided for @topikLevelTileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Training word level'**
+  String get topikLevelTileTitle;
+
+  /// No description provided for @topikLevelTileSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which TOPIK vocabulary set is used during training.'**
+  String get topikLevelTileSubtitle;
+
+  /// No description provided for @topikLevelSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select TOPIK level'**
+  String get topikLevelSheetTitle;
+
+  /// No description provided for @topikLevel1Label.
+  ///
+  /// In en, this message translates to:
+  /// **'TOPIK Level 1 (Easiest)'**
+  String get topikLevel1Label;
+
+  /// No description provided for @topikLevel2Label.
+  ///
+  /// In en, this message translates to:
+  /// **'TOPIK Level 2'**
+  String get topikLevel2Label;
+
+  /// No description provided for @topikLevel3Label.
+  ///
+  /// In en, this message translates to:
+  /// **'TOPIK Level 3'**
+  String get topikLevel3Label;
+
+  /// No description provided for @topikLevel4Label.
+  ///
+  /// In en, this message translates to:
+  /// **'TOPIK Level 4'**
+  String get topikLevel4Label;
+
+  /// No description provided for @topikLevel5Label.
+  ///
+  /// In en, this message translates to:
+  /// **'TOPIK Level 5'**
+  String get topikLevel5Label;
+
+  /// No description provided for @topikLevel6Label.
+  ///
+  /// In en, this message translates to:
+  /// **'TOPIK Level 6 (Hardest)'**
+  String get topikLevel6Label;
+
   /// No description provided for @support.
   ///
   /// In en, this message translates to:
@@ -223,7 +310,7 @@ abstract class AppLocalizations {
   /// No description provided for @terms.
   ///
   /// In en, this message translates to:
-  /// **'Terms of service'**
+  /// **'Terms'**
   String get terms;
 
   /// No description provided for @helpCenter.
@@ -351,10 +438,27 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'OK'**
   String get ok;
+
+  /// No description provided for @learnedWords.
+  ///
+  /// In en, this message translates to:
+  /// **'Learned words'**
+  String get learnedWords;
+
+  /// No description provided for @learnedWordsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No learned words yet.'**
+  String get learnedWordsEmptyTitle;
+
+  /// No description provided for @learnedWordsEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Words you encounter in Train will be recorded here.'**
+  String get learnedWordsEmptySubtitle;
 }
 
-class _AppLocalizationsDelegate
-    extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
@@ -363,28 +467,26 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool isSupported(Locale locale) =>
-      <String>['en', 'ja', 'ko'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>['en', 'ja', 'ko'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
+
+
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'en':
-      return AppLocalizationsEn();
-    case 'ja':
-      return AppLocalizationsJa();
-    case 'ko':
-      return AppLocalizationsKo();
+    case 'en': return AppLocalizationsEn();
+    case 'ja': return AppLocalizationsJa();
+    case 'ko': return AppLocalizationsKo();
   }
 
   throw FlutterError(
     'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
     'an issue with the localizations generation tool. Please file an issue '
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
+    'that was used.'
   );
 }

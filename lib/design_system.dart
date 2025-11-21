@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:learnhangul/liquid_glass_buttons.dart';
@@ -229,7 +227,6 @@ class LearnHangulTheme {
       colorScheme: ColorScheme.fromSeed(
         seedColor: seedColor,
         brightness: brightness,
-        background: palette.background,
         surface: palette.surface,
       ),
       scaffoldBackgroundColor: palette.background,
@@ -351,7 +348,7 @@ class LiquidGlassButton extends StatelessWidget {
       textAlign: expand ? TextAlign.center : TextAlign.start,
       style: typography.label
           .copyWith(
-            color: textColor.withOpacity(onPressed == null ? 0.5 : 1.0),
+            color: textColor.withValues(alpha: onPressed == null ? 0.5 : 1.0),
             fontSize: 16,
           )
           .merge(labelStyle),
@@ -362,13 +359,13 @@ class LiquidGlassButton extends StatelessWidget {
         : variant == LiquidGlassButtonVariant.danger
         ? palette.danger
         : (isDark
-              ? Colors.white.withOpacity(0.03)
-              : Colors.white.withOpacity(0.4));
+              ? Colors.white.withValues(alpha: 0.03)
+              : Colors.white.withValues(alpha: 0.4));
 
     final glassColor = variant == LiquidGlassButtonVariant.success
-        ? palette.success.withOpacity(0.12)
+        ? palette.success.withValues(alpha: 0.12)
         : variant == LiquidGlassButtonVariant.danger
-        ? palette.danger.withOpacity(0.12)
+        ? palette.danger.withValues(alpha: 0.12)
         : (isDark ? const Color(0x1AFFFFFF) : const Color(0x33FFFFFF));
 
     final content = CupertinoButton(
@@ -483,7 +480,7 @@ class LearnHangulDialog extends StatelessWidget {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: accent.withOpacity(0.12),
+                color: accent.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(_iconForVariant(), color: accent),
@@ -612,9 +609,9 @@ class LearnHangulNotice extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: color.withOpacity(0.4)),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -684,10 +681,10 @@ class LearnHangulListTile extends StatelessWidget {
     final palette = LearnHangulTheme.paletteOf(context);
     final typography = LearnHangulTheme.typographyOf(context);
     final background = variant == LearnHangulListTileVariant.danger
-        ? palette.danger.withOpacity(0.08)
+        ? palette.danger.withValues(alpha: 0.08)
         : palette.elevatedSurface;
     final borderColor = variant == LearnHangulListTileVariant.danger
-        ? palette.danger.withOpacity(0.3)
+        ? palette.danger.withValues(alpha: 0.3)
         : palette.outline;
 
     return Container(
@@ -748,7 +745,7 @@ class LearnHangulSurface extends StatelessWidget {
           border: Border.all(color: palette.outline),
           boxShadow: [
             BoxShadow(
-              color: palette.primaryText.withOpacity(0.04),
+              color: palette.primaryText.withValues(alpha: 0.04),
               blurRadius: 24,
               offset: const Offset(0, 18),
             ),
@@ -770,7 +767,7 @@ class LearnHangulSurface extends StatelessWidget {
           border: Border.all(color: palette.outline),
           boxShadow: [
             BoxShadow(
-              color: palette.primaryText.withOpacity(0.04),
+              color: palette.primaryText.withValues(alpha: 0.04),
               blurRadius: 24,
               offset: const Offset(0, 18),
             ),

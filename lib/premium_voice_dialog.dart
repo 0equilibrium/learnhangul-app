@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'custom_liquid_glass_dialog.dart';
 
@@ -39,7 +40,16 @@ Future<bool> hasPremiumKoreanVoice() async {
 /// Returns true if a premium voice is present (either already or after re-check),
 /// otherwise false.
 Future<bool> showPremiumVoiceCheckDialog(BuildContext context) async {
+  const kBypassKey = 'debug_bypass_premium_voice';
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(kBypassKey) ?? false) return true;
+  } catch (_) {
+    // ignore
+  }
+
   final already = await hasPremiumKoreanVoice();
+  if (!context.mounted) return false;
   if (already) return true;
 
   return await showDialog<bool>(
@@ -73,9 +83,10 @@ Future<bool> showPremiumVoiceCheckDialog(BuildContext context) async {
                 CustomLiquidGlassDialogAction(
                   isConfirmationBlue: false,
                   onPressed: () {
-                    hasPremiumKoreanVoice().then(
-                      (ok) => Navigator.of(context).pop(ok),
-                    );
+                    final navigator = Navigator.of(context);
+                    hasPremiumKoreanVoice().then((ok) {
+                      if (navigator.mounted) navigator.pop(ok);
+                    });
                   },
                   child: const Text('다시 확인'),
                 ),

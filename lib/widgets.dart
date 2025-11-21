@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:screen_corner_radius/screen_corner_radius.dart';
 import 'premium_voice_dialog.dart';
 
 import 'design_system.dart';
@@ -12,12 +13,26 @@ import 'liquid_glass_buttons.dart';
 Future<void> showCharacterDetails(
   BuildContext context,
   HangulCharacter character,
-) {
+) async {
+  // Fetch device screen corner radii and print for debugging each time
+  final ScreenRadius? screenRadius = await ScreenCornerRadius.get();
+  if (!context.mounted) return;
+  // Print so developers can see the detected radii when a tile is tapped.
+  // Print field values explicitly so logs are readable instead of "Instance of 'ScreenRadius'".
+  if (screenRadius == null) {
+    debugPrint('ScreenCornerRadius: null');
+  } else {
+    debugPrint(
+      'ScreenCornerRadius: topLeft=${screenRadius.topLeft}, topRight=${screenRadius.topRight}, bottomLeft=${screenRadius.bottomLeft}, bottomRight=${screenRadius.bottomRight}',
+    );
+  }
+
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => CharacterDetailSheet(character: character),
+    builder: (_) =>
+        CharacterDetailSheet(character: character, screenRadius: screenRadius),
   );
 }
 
@@ -83,13 +98,13 @@ class _LearningHeroCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(36),
         gradient: LinearGradient(
-          colors: [seedColor.withOpacity(0.95), accentColor.withOpacity(0.75)],
+          colors: [seedColor.withValues(alpha: 0.95), accentColor.withValues(alpha: 0.75)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: palette.danger.withOpacity(0.3),
+            color: palette.danger.withValues(alpha: 0.3),
             blurRadius: 36,
             offset: const Offset(0, 18),
           ),
@@ -104,7 +119,7 @@ class _LearningHeroCard extends StatelessWidget {
           Text(
             subtitle,
             style: typography.body.copyWith(
-              color: Colors.white.withOpacity(0.85),
+              color: Colors.white.withValues(alpha: 0.85),
             ),
           ),
           const SizedBox(height: 16),
@@ -274,7 +289,7 @@ class HangulSectionCard extends StatelessWidget {
                     _HangulCharacterTile.cornerRadius,
                   ),
                   child: Material(
-                    color: palette.elevatedSurface.withOpacity(0.92),
+                    color: palette.elevatedSurface.withValues(alpha: 0.92),
                     child: InkWell(
                       onTap: onLockedTap,
                       child: const SizedBox.expand(),
@@ -301,9 +316,9 @@ class _StatusPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.4)),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
       child: Text(
         label,
@@ -335,20 +350,14 @@ class _HangulCharacterTile extends StatelessWidget {
 
   /// Calculate button background color based on correct count.
   /// 0 -> current surface color
-  /// 7+ -> 100% blue (#2196F3)
-  /// 1-6 -> proportional blend between surface and blue
-  /// Note: text color threshold is lowered to 5 elsewhere so text becomes
-  /// white starting at 5 corrects while background interpolation remains 7-step.
+  /// 4+ -> 100% of the max color
+  /// 1-3 -> proportional blend between surface and the max color
+  /// Note: text color becomes light (white) starting at 4 corrects.
   Color _getBackgroundColor(Color surfaceColor, Color blueColor) {
-    if (correctCount == 0) {
-      return surfaceColor;
-    }
+    if (correctCount == 0) return surfaceColor;
 
-    // Calculate progress: each step from 1-7 is 1/7 (≈14.3%)
-    // At 7+, we're at 100%
-    final progress = (correctCount / 7).clamp(0.0, 1.0);
-
-    // Interpolate between surface color and blue
+    // For counts 1..3 interpolate proportionally; 4 or more -> full color.
+    final progress = (correctCount.clamp(0, 4) / 4).clamp(0.0, 1.0);
     return Color.lerp(surfaceColor, blueColor, progress) ?? surfaceColor;
   }
 
@@ -363,10 +372,11 @@ class _HangulCharacterTile extends StatelessWidget {
     );
 
     // 한글 문자와 로마자 표기는 항상 기본 색상 유지
-    // Make text white starting at 5 correct answers (visual tweak).
-    final textColor = correctCount >= 5 ? Colors.white : palette.primaryText;
-    final captionColor = correctCount >= 5
-        ? Colors.white.withOpacity(0.8)
+    // Make text light (white) starting at 4 correct answers (visual tweak).
+    final bool isMaxStage = correctCount >= 4;
+    final textColor = isMaxStage ? Colors.white : palette.primaryText;
+    final captionColor = isMaxStage
+        ? Colors.white.withValues(alpha: 0.8)
         : palette.mutedText;
 
     final double tileSize = width ?? height ?? 72.0;
@@ -450,11 +460,10 @@ class _HangulSectionPadding extends StatelessWidget {
   static const double defaultVertical = 8.0;
 
   const _HangulSectionPadding({
-    Key? key,
     required this.child,
     this.horizontal = defaultHorizontal,
     this.vertical = defaultVertical,
-  }) : super(key: key);
+  });
 
   final Widget child;
   final double horizontal;
@@ -470,9 +479,14 @@ class _HangulSectionPadding extends StatelessWidget {
 }
 
 class CharacterDetailSheet extends StatefulWidget {
-  const CharacterDetailSheet({required this.character});
+  const CharacterDetailSheet({
+    super.key,
+    required this.character,
+    this.screenRadius,
+  });
 
   final HangulCharacter character;
+  final ScreenRadius? screenRadius;
 
   @override
   State<CharacterDetailSheet> createState() => _CharacterDetailSheetState();
@@ -480,6 +494,76 @@ class CharacterDetailSheet extends StatefulWidget {
 
 class _CharacterDetailSheetState extends State<CharacterDetailSheet> {
   late FlutterTts _flutterTts;
+
+  // Hangul composition tables for building consonant+'ㅡ' syllables
+  static const List<String> _initials = [
+    'ㄱ',
+    'ㄲ',
+    'ㄴ',
+    'ㄷ',
+    'ㄸ',
+    'ㄹ',
+    'ㅁ',
+    'ㅂ',
+    'ㅃ',
+    'ㅅ',
+    'ㅆ',
+    'ㅇ',
+    'ㅈ',
+    'ㅉ',
+    'ㅊ',
+    'ㅋ',
+    'ㅌ',
+    'ㅍ',
+    'ㅎ',
+  ];
+
+  static const List<String> _medials = [
+    'ㅏ',
+    'ㅐ',
+    'ㅑ',
+    'ㅒ',
+    'ㅓ',
+    'ㅔ',
+    'ㅕ',
+    'ㅖ',
+    'ㅗ',
+    'ㅘ',
+    'ㅙ',
+    'ㅚ',
+    'ㅛ',
+    'ㅜ',
+    'ㅝ',
+    'ㅞ',
+    'ㅟ',
+    'ㅠ',
+    'ㅡ',
+    'ㅢ',
+    'ㅣ',
+  ];
+
+  // composite final symbols where we don't show the pronunciation button
+  static const List<String> _compositeFinals = [
+    'ㄳ',
+    'ㄵ',
+    'ㄶ',
+    'ㄺ',
+    'ㄻ',
+    'ㄼ',
+    'ㄽ',
+    'ㄾ',
+    'ㄿ',
+    'ㅀ',
+    'ㅄ',
+  ];
+
+  String _composeSyllable(String initial, String medial) {
+    final L = _initials.indexOf(initial);
+    final V = _medials.indexOf(medial);
+    if (L < 0 || V < 0) return initial + medial;
+    final sIndex = 0xAC00 + (L * 21 + V) * 28; // TIndex = 0
+    return String.fromCharCode(sIndex);
+  }
 
   @override
   void initState() {
@@ -504,7 +588,18 @@ class _CharacterDetailSheetState extends State<CharacterDetailSheet> {
     try {
       final ok = await showPremiumVoiceCheckDialog(context);
       if (!ok) return;
-      await _flutterTts.speak(widget.character.name);
+
+      if (widget.character.type == HangulCharacterType.vowel) {
+        // vowels: speak the vowel syllable/name (e.g. '아', '외')
+        await _flutterTts.speak(widget.character.name);
+      } else {
+        // consonants: skip composite finals
+        final sym = widget.character.symbol;
+        if (_compositeFinals.contains(sym)) return;
+        // compose consonant + 'ㅡ' syllable (e.g. ㅅ -> 스)
+        final syllable = _composeSyllable(sym, 'ㅡ');
+        await _flutterTts.speak(syllable);
+      }
     } catch (_) {}
   }
 
@@ -552,7 +647,7 @@ class _CharacterDetailSheetState extends State<CharacterDetailSheet> {
     if (base.isNotEmpty) {
       spans.add(
         TextSpan(
-          text: base + ' ',
+          text: '$base ',
           style: typography.body.copyWith(color: palette.primaryText),
         ),
       );
@@ -562,7 +657,7 @@ class _CharacterDetailSheetState extends State<CharacterDetailSheet> {
     if (romanization.isNotEmpty) {
       spans.add(
         TextSpan(
-          text: romanization + ' ',
+          text: '$romanization ',
           style: typography.body.copyWith(color: palette.warning),
         ),
       );
@@ -571,7 +666,7 @@ class _CharacterDetailSheetState extends State<CharacterDetailSheet> {
     if (meaning.isNotEmpty) {
       spans.add(
         TextSpan(
-          text: '(' + meaning + ')',
+          text: '($meaning)',
           style: typography.body.copyWith(color: palette.primaryText),
         ),
       );
@@ -579,7 +674,7 @@ class _CharacterDetailSheetState extends State<CharacterDetailSheet> {
 
     return RichText(
       text: TextSpan(children: spans),
-      textScaleFactor: MediaQuery.textScaleFactorOf(context),
+      textScaler: MediaQuery.textScalerOf(context),
     );
   }
 
@@ -590,12 +685,19 @@ class _CharacterDetailSheetState extends State<CharacterDetailSheet> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      margin: const EdgeInsets.only(top: 100),
+      margin: const EdgeInsets.only(top: 100, bottom: 5, right: 5, left: 5),
       decoration: BoxDecoration(
         color: isDarkMode
             ? Colors.black.withValues(alpha: 0.85)
             : const Color(0xffF1F2F4),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(34)),
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(34),
+          topRight: const Radius.circular(34),
+          bottomLeft: Radius.circular((widget.screenRadius?.bottomLeft ?? 0.0)),
+          bottomRight: Radius.circular(
+            (widget.screenRadius?.bottomRight ?? 0.0),
+          ),
+        ),
         border: Border.all(
           color: isDarkMode
               ? Colors.white.withValues(alpha: 0.2)
@@ -642,91 +744,164 @@ class _CharacterDetailSheetState extends State<CharacterDetailSheet> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  Text(widget.character.name, style: typography.heading),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          widget.character.romanization,
-                          style: typography.body.copyWith(color: palette.info),
+                  const SizedBox(height: 12),
+
+                  // Top-centered liquid speaker button (between the symbol box and title)
+                  if (!(widget.character.type ==
+                          HangulCharacterType.consonant &&
+                      _compositeFinals.contains(widget.character.symbol)))
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: LiquidGlassButtons.circularIconButton(
+                          context,
+                          icon: CupertinoIcons.speaker_2,
+                          size: 52.0,
+                          onPressed: _speakCharacter,
                         ),
                       ),
-                      IconButton(
-                        icon: Icon(
-                          Icons.volume_up_rounded,
-                          color: palette.info,
-                        ),
-                        onPressed: _speakCharacter,
-                        tooltip: '발음 듣기',
-                      ),
-                    ],
+                    ),
+
+                  // Name
+                  Text(
+                    AppLocalizations.of(context)!.nameLabel,
+                    style: typography.caption.copyWith(
+                      fontSize: 13.0,
+                      color: palette.mutedText,
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        AppLocalizations.of(context)!.exampleWord,
-                        style: typography.caption.copyWith(
-                          fontSize: 14.0,
-                          color: palette.mutedText,
-                        ),
+                  const SizedBox(height: 6),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: palette.surface,
+                      borderRadius: BorderRadius.circular(26),
+                      border: Border.all(color: palette.outline),
+                    ),
+                    child: Text(
+                      widget.character.name,
+                      style: typography.body.copyWith(
+                        fontSize: 16.0,
+                        fontWeight: FontWeight.w600,
+                        color: palette.primaryText,
                       ),
-                      const SizedBox(height: 4),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildExampleRichFromRaw(
-                                  context,
-                                  widget.character.example,
-                                ),
-                                if (widget.character.secondExample != null) ...[
-                                  const SizedBox(height: 8),
-                                  _buildExampleRichFromRaw(
-                                    context,
-                                    widget.character.secondExample!,
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          Column(
-                            children: [
-                              IconButton(
-                                icon: Icon(
-                                  Icons.volume_up_rounded,
-                                  color: palette.info,
-                                ),
-                                onPressed: () =>
-                                    _speakExampleRaw(widget.character.example),
-                                tooltip: AppLocalizations.of(
-                                  context,
-                                )!.exampleWordTooltip,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Romanization
+                  Text(
+                    AppLocalizations.of(context)!.romanizationLabel,
+                    style: typography.caption.copyWith(
+                      fontSize: 13.0,
+                      color: palette.mutedText,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: palette.surface,
+                      borderRadius: BorderRadius.circular(26),
+                      border: Border.all(color: palette.outline),
+                    ),
+                    child: Text(
+                      widget.character.romanization,
+                      style: typography.body.copyWith(
+                        fontSize: 16.0,
+                        fontWeight: FontWeight.w600,
+                        color: palette.warning,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Example words (title outside, contents inside rounded box). Each example
+                  // is a row with the text and a rounded cupertino speaker button.
+                  Text(
+                    AppLocalizations.of(context)!.exampleWord,
+                    style: typography.caption.copyWith(
+                      fontSize: 13.0,
+                      color: palette.mutedText,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: palette.surface,
+                      borderRadius: BorderRadius.circular(26),
+                      border: Border.all(color: palette.outline),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // primary example row
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: _buildExampleRichFromRaw(
+                                context,
+                                widget.character.example,
                               ),
-                              if (widget.character.secondExample != null)
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.volume_up_rounded,
-                                    color: palette.info,
-                                  ),
-                                  onPressed: () => _speakExampleRaw(
-                                    widget.character.secondExample!,
-                                  ),
-                                  tooltip: AppLocalizations.of(
-                                    context,
-                                  )!.exampleWordTooltip,
+                            ),
+                            const SizedBox(width: 8),
+                            CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: () =>
+                                  _speakExampleRaw(widget.character.example),
+                              child: Icon(
+                                CupertinoIcons.speaker_2,
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.white
+                                    : Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (widget.character.secondExample != null) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: _buildExampleRichFromRaw(
+                                  context,
+                                  widget.character.secondExample!,
                                 ),
+                              ),
+                              const SizedBox(width: 8),
+                              CupertinoButton(
+                                padding: EdgeInsets.zero,
+                                onPressed: () => _speakExampleRaw(
+                                  widget.character.secondExample!,
+                                ),
+                                child: Icon(
+                                  CupertinoIcons.speaker_2,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.white
+                                      : Colors.black,
+                                ),
+                              ),
                             ],
                           ),
                         ],
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),

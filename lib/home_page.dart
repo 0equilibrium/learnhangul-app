@@ -110,7 +110,7 @@ class _LearnHangulHomePageState extends State<LearnHangulHomePage> {
       context: context,
       barrierDismissible: true,
       useRootNavigator: false,
-      barrierColor: Colors.black.withOpacity(0.3),
+      barrierColor: Colors.black.withValues(alpha: 0.3),
       builder: (_) => Center(
         child: CustomLiquidGlassDialog(
           title: Text(AppLocalizations.of(context)!.consonantLockedTitle),
@@ -146,7 +146,7 @@ class _LearnHangulHomePageState extends State<LearnHangulHomePage> {
           style: TextStyle(
             fontSize: 24,
             color: showConsonantLocked
-                ? palette.secondaryText.withOpacity(0.5)
+                ? palette.secondaryText.withValues(alpha: 0.5)
                 : iconColor,
           ),
         ),
@@ -177,14 +177,14 @@ class _LearnHangulHomePageState extends State<LearnHangulHomePage> {
                       trailing: Icon(
                         CupertinoIcons.chevron_right,
                         color: (item['isLocked'] as bool)
-                            ? palette.secondaryText.withOpacity(0.5)
+                            ? palette.secondaryText.withValues(alpha: 0.5)
                             : iconColor,
                       ),
                       onPressed: item['onPressed'] as VoidCallback,
                       variant: item['variant'] as LiquidGlassButtonVariant,
                       labelStyle: (item['isLocked'] as bool)
                           ? TextStyle(
-                              color: palette.secondaryText.withOpacity(0.5),
+                              color: palette.secondaryText.withValues(alpha: 0.5),
                             )
                           : null,
                     ),

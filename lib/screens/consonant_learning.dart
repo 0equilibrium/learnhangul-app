@@ -55,7 +55,7 @@ class _ConsonantLearningScreenState extends State<ConsonantLearningScreen> {
       context: context,
       barrierDismissible: true,
       useRootNavigator: false,
-      barrierColor: Colors.black.withOpacity(0.3),
+      barrierColor: Colors.black.withValues(alpha: 0.3),
       builder: (_) => Center(
         child: CustomLiquidGlassDialog(
           title: Text(AppLocalizations.of(context)!.rowUnlockTitle),
@@ -132,6 +132,7 @@ class _ConsonantLearningScreenState extends State<ConsonantLearningScreen> {
               onPressed: () async {
                 final ok = await showPremiumVoiceCheckDialog(context);
                 if (!ok) return;
+                if (!context.mounted) return;
                 Navigator.push(
                   context,
                   MaterialPageRoute(

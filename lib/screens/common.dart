@@ -1,10 +1,11 @@
-import '../models.dart';
+import '../data/training_words_repository.dart';
 
 // Preferences key for learned words (public so multiple screens can use it)
 const String learnedWordsPrefsKey = 'learned_words_v1';
 
 class LearnedWordEntry {
   const LearnedWordEntry({
+    required this.symbol,
     required this.term,
     required this.romanization,
     this.meaning,
@@ -12,6 +13,7 @@ class LearnedWordEntry {
     required this.timesSeen,
   });
 
+  final String symbol;
   final String term;
   final String romanization;
   final String? meaning;
@@ -19,8 +21,11 @@ class LearnedWordEntry {
   final int timesSeen;
 
   factory LearnedWordEntry.fromJson(Map<String, dynamic> json) {
+    final symbol = json['symbol'] as String? ?? json['term'] as String;
+    final termRaw = json['term'] as String? ?? symbol;
     return LearnedWordEntry(
-      term: json['term'] as String,
+      symbol: symbol,
+      term: sanitizeTrainingWordSymbol(termRaw),
       romanization: json['romanization'] as String,
       meaning: json['meaning'] as String?,
       seenAt: DateTime.parse(json['seenAt'] as String),
@@ -29,6 +34,7 @@ class LearnedWordEntry {
   }
 
   Map<String, dynamic> toJson() => {
+    'symbol': symbol,
     'term': term,
     'romanization': romanization,
     'meaning': meaning,
@@ -38,6 +44,7 @@ class LearnedWordEntry {
 
   LearnedWordEntry copyWith({DateTime? seenAt, int? timesSeen}) {
     return LearnedWordEntry(
+      symbol: symbol,
       term: term,
       romanization: romanization,
       meaning: meaning,
@@ -94,6 +101,37 @@ const List<String> jungseongList = [
   'ㅣ',
 ];
 
+const List<String> jongseongList = [
+  '',
+  'ㄱ',
+  'ㄲ',
+  'ㄳ',
+  'ㄴ',
+  'ㄵ',
+  'ㄶ',
+  'ㄷ',
+  'ㄹ',
+  'ㄺ',
+  'ㄻ',
+  'ㄼ',
+  'ㄽ',
+  'ㄾ',
+  'ㄿ',
+  'ㅀ',
+  'ㅁ',
+  'ㅂ',
+  'ㅄ',
+  'ㅅ',
+  'ㅆ',
+  'ㅇ',
+  'ㅈ',
+  'ㅊ',
+  'ㅋ',
+  'ㅌ',
+  'ㅍ',
+  'ㅎ',
+];
+
 String composeSyllable(String initialJamo, String medialJamo) {
   final ci = choseongList.indexOf(initialJamo);
   final mi = jungseongList.indexOf(medialJamo);
@@ -124,4 +162,39 @@ bool hasBatchim(String text) {
     if (jong > 0) return true;
   }
   return false;
+}
+
+String approximateBatchimPronunciation(String text) {
+  const base = 0xAC00;
+  final buffer = StringBuffer();
+  bool changed = false;
+  for (final rune in text.runes) {
+    if (rune < base || rune > 0xD7A3) {
+      buffer.writeCharCode(rune);
+      continue;
+    }
+    final relative = rune - base;
+    final choseongIndex = relative ~/ (21 * 28);
+    final jungseongIndex = (relative % (21 * 28)) ~/ 28;
+    final jongseongIndex = relative % 28;
+    final jong = jongseongList[jongseongIndex];
+    final override = batchimOnlyPronunciationOverrides[jong];
+    if (override == null) {
+      buffer.writeCharCode(rune);
+      continue;
+    }
+    final overrideIndex = jongseongList.indexOf(override);
+    final newJongIndex = overrideIndex == -1 ? jongseongIndex : overrideIndex;
+    final code = base + (choseongIndex * 21 + jungseongIndex) * 28 + newJongIndex;
+    buffer.writeCharCode(code);
+    changed = true;
+  }
+  if (!changed) return text;
+  return buffer.toString();
+}
+
+String? batchimOnlyPronunciationKey(String text) {
+  final approximated = approximateBatchimPronunciation(text);
+  if (approximated == text) return null;
+  return approximated;
 }

@@ -31,12 +31,11 @@ class CustomListSection extends StatelessWidget {
     this.dividerMargin = _kInsetDividerMargin,
     double? additionalDividerMargin,
     this.topMargin,
-    bool hasLeading = true,
+    this.hasLeading = true,
     this.separatorColor,
     this.isOnModal = false,
   }) : assert((children != null && children.length > 0) || header != null),
        type = CustomListSectionType.insetGrouped,
-       hasLeading = hasLeading,
        additionalDividerMargin =
            additionalDividerMargin ??
            (hasLeading

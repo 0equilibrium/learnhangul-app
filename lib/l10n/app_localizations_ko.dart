@@ -33,6 +33,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get trainingComplete => '훈련 완료!';
 
   @override
+  String get trainingExitTitle => '훈련 중단';
+
+  @override
+  String get trainingExitMessage => '지금 나가면 훈련 기록이 저장되지 않아요. 그래도 나가시겠어요?';
+
+  @override
+  String get trainingExitLeave => '나가기';
+
+  @override
+  String get trainingExitStay => '훈련하기';
+
+  @override
   String resultSummary(Object correct, Object wrong) {
     return '총 맞힌 수: $correct, 틀린 수: $wrong';
   }
@@ -48,6 +60,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get exampleWordTooltip => '예시 단어 발음 듣기';
+
+  @override
+  String get nameLabel => '이름';
+
+  @override
+  String get romanizationLabel => '로마자';
 
   @override
   String get settings => '설정';
@@ -66,6 +84,33 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get ttsHintsSubtitle => '문제를 풀 때 자동으로 음성 힌트 듣기';
+
+  @override
+  String get topikLevelTileTitle => '학습 단어 수준';
+
+  @override
+  String get topikLevelTileSubtitle => '훈련하기에서 사용할 TOPIK 어휘 세트를 선택하세요.';
+
+  @override
+  String get topikLevelSheetTitle => 'TOPIK 레벨 선택';
+
+  @override
+  String get topikLevel1Label => 'TOPIK 레벨 1 (쉬움)';
+
+  @override
+  String get topikLevel2Label => 'TOPIK 레벨 2';
+
+  @override
+  String get topikLevel3Label => 'TOPIK 레벨 3';
+
+  @override
+  String get topikLevel4Label => 'TOPIK 레벨 4';
+
+  @override
+  String get topikLevel5Label => 'TOPIK 레벨 5';
+
+  @override
+  String get topikLevel6Label => 'TOPIK 레벨 6 (어려움)';
 
   @override
   String get support => '지원';
@@ -141,4 +186,13 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get ok => '확인';
+
+  @override
+  String get learnedWords => '내가 학습한 단어';
+
+  @override
+  String get learnedWordsEmptyTitle => '아직 정리된 단어가 없어요.';
+
+  @override
+  String get learnedWordsEmptySubtitle => '훈련하기에서 새로운 단어를 만나면 여기에 차곡차곡 쌓여요.';
 }

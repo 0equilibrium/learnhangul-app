@@ -21,6 +21,8 @@ class HangulCharacter {
     this.secondExample,
     required this.type,
     this.meaning,
+    // Optional part-of-speech (품사) when available from vocab lists.
+    this.pos,
   });
 
   final String symbol;
@@ -32,6 +34,7 @@ class HangulCharacter {
   final String? secondExample;
   final HangulCharacterType type;
   final String? meaning;
+  final String? pos;
 
   factory HangulCharacter.fromJson(
     Map<String, dynamic> json, {
@@ -58,6 +61,7 @@ class HangulCharacter {
       secondExample: json['secondExample'] as String?,
       type: resolvedType,
       meaning: json['meaning'] as String?,
+      pos: json['pos'] as String?,
     );
   }
 
@@ -69,6 +73,7 @@ class HangulCharacter {
     'secondExample': secondExample,
     'type': type.name,
     'meaning': meaning,
+    'pos': pos,
   };
 }
 
@@ -255,79 +260,90 @@ const List<HangulSection> consonantSections = [
     characters: [
       HangulCharacter(
         symbol: 'ㄳ',
-        name: 'ㄱ+ㅅ',
+        name: '기역시옷',
         romanization: 'gs',
         example: '값 (gap, price)',
+        secondExample: '넋 (neok, spirit)',
         type: HangulCharacterType.consonant,
       ),
       HangulCharacter(
         symbol: 'ㄵ',
-        name: 'ㄴ+ㅈ',
+        name: '니은지읒',
         romanization: 'nj',
         example: '앉다 (an-da, sit)',
+        secondExample: '앉아 (an-ja, sit)',
         type: HangulCharacterType.consonant,
       ),
       HangulCharacter(
         symbol: 'ㄶ',
-        name: 'ㄴ+ㅎ',
+        name: '니은히읗',
         romanization: 'nh',
         example: '많다 (man-ta, many)',
+        secondExample: '많이 (man-hi, much)',
         type: HangulCharacterType.consonant,
       ),
       HangulCharacter(
         symbol: 'ㄺ',
-        name: 'ㄹ+ㄱ',
+        name: '리을기역',
         romanization: 'lg',
         example: '읽다 (ik-tta, read)',
+        secondExample: '읽어 (il-geo, read)',
         type: HangulCharacterType.consonant,
       ),
       HangulCharacter(
         symbol: 'ㄻ',
-        name: 'ㄹ+ㅁ',
+        name: '리을미음',
         romanization: 'lm',
         example: '삶 (sam, life)',
+        secondExample: '삶다 (sam-da, boil)',
         type: HangulCharacterType.consonant,
       ),
       HangulCharacter(
         symbol: 'ㄼ',
-        name: 'ㄹ+ㅂ',
+        name: '리을비읍',
         romanization: 'lb',
         example: '밟다 (bap-tta, step on)',
+        secondExample: '넓다 (neolb-da, wide)',
         type: HangulCharacterType.consonant,
       ),
       HangulCharacter(
         symbol: 'ㄽ',
-        name: 'ㄹ+ㅅ',
+        name: '리을시옷',
         romanization: 'ls',
         example: '곬 (gol, passage)',
+        secondExample: '외곬 (oe-gol, passage)',
         type: HangulCharacterType.consonant,
       ),
       HangulCharacter(
         symbol: 'ㄾ',
-        name: 'ㄹ+ㅌ',
+        name: '리을티읕',
         romanization: 'lt',
         example: '훑다 (hut-tta, scan)',
+        secondExample: '훑어 (hut-eo, scan)',
         type: HangulCharacterType.consonant,
       ),
       HangulCharacter(
         symbol: 'ㄿ',
-        name: 'ㄹ+ㅍ',
+        name: '리을피읖',
         romanization: 'lp',
         example: '읊다 (eup-tta, recite)',
+        secondExample: '읊어 (eup-eo, recite)',
         type: HangulCharacterType.consonant,
       ),
       HangulCharacter(
         symbol: 'ㅀ',
-        name: 'ㄹ+ㅎ',
+        name: '리을히읗',
         romanization: 'lh',
         example: '싫다 (sil-ta, dislike)',
+        secondExample: '싫어 (silh-eo, dislike)',
         type: HangulCharacterType.consonant,
       ),
       HangulCharacter(
         symbol: 'ㅄ',
-        name: 'ㅂ+ㅅ',
+        name: '비읍시옷',
         romanization: 'bs',
         example: '값어치 (gap-eo-chi, value)',
+        secondExample: '값 (gap, price)',
         type: HangulCharacterType.consonant,
       ),
     ],
